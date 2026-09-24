@@ -1,0 +1,20 @@
+# Render blueprint for the Clear Price backend.
+#
+# In Render: New + > Blueprint > pick this repo. Render reads this file and
+# creates the web service below. The frontend lives on Vercel (see CLEAR_PRICE.md).
+services:
+  - type: web
+    name: clear-price-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Comma-separated list of frontend origins allowed to call this API.
+      # Replace with your real Vercel URL before (or right after) deploying.
+      - key: ALLOWED_ORIGINS
+        value: https://clear-price.vercel.app

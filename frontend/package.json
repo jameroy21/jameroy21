@@ -1,0 +1,22 @@
+{
+  "name": "clear-price-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Clear Price — see the real price after stacked discounts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:ui": "node tests/ui.smoke.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^30.1.1",
+    "vite": "^6.0.7"
+  }
+}

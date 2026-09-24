@@ -1,0 +1,278 @@
+/* Clear Price — big text, high contrast, thumb-friendly. Mobile first. */
+
+:root {
+  color-scheme: light;
+
+  --ink: #0b1220; /* near-black on white: ~18:1 */
+  --ink-soft: #334155; /* still ~10:1, used for secondary lines */
+  --canvas: #eef2f7;
+  --card: #ffffff;
+  --line: #94a3b8;
+  --brand: #0b4ea2; /* white text on this: ~8:1 */
+  --brand-dark: #073a79;
+  --alert-bg: #fdecea;
+  --alert-line: #b3261e; /* on the pale pink: ~6:1 */
+  --saved: #7ee787; /* on the dark result panel: >10:1 */
+  --radius: 16px;
+  --shadow: 0 2px 10px rgba(11, 18, 32, 0.12);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 20px; /* body minimum, well above the 18px floor */
+  line-height: 1.4;
+}
+
+.page {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ---------------------------------------------------------------- header -- */
+
+.masthead {
+  text-align: center;
+}
+
+.masthead__title {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--brand);
+}
+
+.masthead__tagline {
+  margin: 0.35rem 0 0;
+  font-size: 1.125rem;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------------ form -- */
+
+.card {
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.chip {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--brand);
+  background: #e3edfb;
+  border: 2px solid #b9d2f2;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__prefix,
+.field__suffix {
+  position: absolute;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.field__prefix {
+  left: 1rem;
+}
+
+.field__suffix {
+  right: 1rem;
+}
+
+.field__input {
+  width: 100%;
+  min-height: 4.25rem; /* 68px: comfortable tap target */
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--line);
+  border-radius: var(--radius);
+  appearance: none;
+}
+
+.field__input--money {
+  padding-left: 2.5rem;
+}
+
+.field__input--percent {
+  padding-right: 2.75rem;
+}
+
+.field__input::placeholder {
+  color: #7c8798;
+  font-weight: 600;
+}
+
+.field__input:focus-visible {
+  outline: 4px solid var(--brand);
+  outline-offset: 2px;
+  border-color: var(--brand);
+}
+
+/* ---------------------------------------------------------------- button -- */
+
+.button {
+  min-height: 4.5rem; /* 72px */
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--brand);
+  border: 3px solid var(--brand-dark);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+
+.button:focus-visible {
+  outline: 4px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+/* ------------------------------------------------------------ messaging -- */
+
+.alert {
+  margin: 0;
+  padding: 1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--alert-line);
+  background: var(--alert-bg);
+  border: 3px solid var(--alert-line);
+  border-radius: var(--radius);
+}
+
+/* --------------------------------------------------------------- result -- */
+
+.result:empty {
+  display: none;
+}
+
+.result {
+  margin: 0;
+  padding: 1.5rem 1.25rem;
+  background: var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+  color: #fff;
+}
+
+.result__label {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.result__price {
+  margin: 0.15rem 0 0.5rem;
+  font-size: clamp(3rem, 16vw, 4.5rem); /* 48px+ */
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  word-break: break-word;
+}
+
+.result__saved {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--saved);
+}
+
+.result__detail {
+  margin: 0.5rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+/* ------------------------------------------------------------- wide view -- */
+
+@media (min-width: 480px) {
+  .page {
+    padding: 2.5rem 1.5rem 4rem;
+    gap: 1.5rem;
+  }
+
+  .card {
+    padding: 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

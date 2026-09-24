@@ -64,6 +64,13 @@ Data Science professional with **3+ years** of experience transforming complex d
 
 ## 🔥 Featured Projects
 
+### 🏷️ Clear Price — Stacked Discount Calculator
+**Tech:** Python, FastAPI, React, Vite  
+Mobile-first web app that answers one question for shoppers: *what do I really pay?*
+Two discounts stack sequentially — 20% off followed by 70% off is **76% off, not 90%** —
+so a $89 tag becomes $21.36. Big-type, high-contrast UI with the number keypad on phones.  
+→ [Project docs & deployment](CLEAR_PRICE.md)
+
 ### 🤖 AI-Powered Cold Email Generator
 **Tech:** Python, Llama 3.0, LangChain, Streamlit  
 Engineered B2B tool with **78% accuracy** in data extraction, reducing manual drafting time by **90%**
