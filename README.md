@@ -65,6 +65,10 @@ Data Science professional with **3+ years** of experience transforming complex d
 ## 🔥 Featured Projects
 
 ### 🏷️ Clear Price — Stacked Discount Calculator
+
+[![CI](https://github.com/jameroy21/jameroy21/actions/workflows/ci.yml/badge.svg)](https://github.com/jameroy21/jameroy21/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/jameroy21/jameroy21?label=release)](https://github.com/jameroy21/jameroy21/releases)
+
 **Tech:** Python, FastAPI, React, Vite  
 Mobile-first web app that answers one question for shoppers: *what do I really pay?*
 Two discounts stack sequentially — 20% off followed by 70% off is **76% off, not 90%** —
