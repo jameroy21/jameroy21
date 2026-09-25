@@ -227,18 +227,36 @@ user data, so an open origin policy leaks nothing.
 
 1. Buy a short, memorable domain (see `LAUNCH.md` for naming advice) — e.g.
    `clearpriced.com`, `stackeddiscount.com`.
-2. **Vercel** → your project → **Settings** → **Domains** → add the domain →
-   follow the DNS instructions (an `A`/`CNAME` record at your registrar).
-3. In `frontend/index.html` replace the three placeholder
-   `https://clear-price.vercel.app` URLs (canonical, `og:url`) with the real
-   domain. Also update `frontend/public/robots.txt` and
-   `frontend/public/sitemap.xml`. Commit and push.
-4. Add the custom domain to Render's `ALLOWED_ORIGINS` (comma-separated with the
-   Vercel URL) and optionally front the API with its own subdomain
-   (e.g. `api.clearpriced.com`) via a Render custom domain, then update
-   `VITE_API_BASE_URL` in Vercel and redeploy.
-5. Set up the redirect so `www` and the apex both work (Vercel handles this by
-   default once both are added).
+2. Add it to whichever host serves the app:
+   - **GitHub Pages** → repo → **Settings** → **Pages** → **Custom domain**,
+     then create a `CNAME` record at your registrar pointing at
+     `jameroy21.github.io`. Tick **Enforce HTTPS** once the certificate is
+     issued (minutes, sometimes an hour).
+   - **Vercel** → project → **Settings** → **Domains** → add it and follow the
+     DNS instructions (an `A`/`CNAME` record).
+   - **Render** (API) → optional: front it with `api.clearpriced.com`.
+3. **Rebuild for the new address.** The Pages build bakes its own path in
+   (`VITE_BASE=/clear-price/`), so an address change is a config change, not a
+   DNS-only move:
+
+   ```jsonc
+   // frontend/package.json -> scripts
+   "build:pages": "VITE_BASE=/ VITE_CALC_MODE=local VITE_ANALYTICS=off \
+                   VITE_SITE_URL=https://clearpriced.com vite build"
+   ```
+
+   With a custom domain the site is served from the root, so the base becomes
+   `/`. If instead you keep the github.io address, change nothing.
+4. Update the canonical and social URLs everywhere at once — `frontend/index.html`
+   (canonical, `og:url`), `frontend/public/robots.txt`,
+   `frontend/public/sitemap.xml`, `APP_README.md`, `SETUP_GITHUB.md` — then run
+   `.venv/bin/python tools/check_urls.py`, which fails if any of them disagree
+   or if an asset path stops being safe for a subpath. Commit and push.
+5. Add the custom domain to Render's `ALLOWED_ORIGINS` (comma-separated with the
+   Vercel URL), then update `VITE_API_BASE_URL` in Vercel and redeploy.
+6. Set up the redirect so `www` and the apex both work (Vercel handles this by
+   default once both are added; on Pages, redirect the `www` CNAME in DNS or
+   with a Cloudflare rule).
 
 ---
 
