@@ -72,8 +72,10 @@ jobs:
 
       - name: Fail if the build has root-absolute asset paths
         run: |
-          # A subpath deployment 404s on these, and only on a real phone.
-          if grep -oE '(href|src)="/[^"]*"' frontend/dist/index.html | grep -v '^src="/src/'; then
+          # A leading "/" points at the domain root, so every asset would 404
+          # under /clear-price/ — and only on a real deployment. The Pages build
+          # uses a relative base, so this is a hard requirement, not a warning.
+          if grep -oE '(href|src)="/[^"]*"' frontend/dist/index.html; then
             echo "::error::index.html contains root-absolute paths; they break on GitHub Pages"
             exit 1
           fi

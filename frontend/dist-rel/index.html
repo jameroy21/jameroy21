@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Zooming is deliberately left enabled: some shoppers need it. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      One place to change when the app moves: the domain below, plus the same
+      host in robots.txt and sitemap.xml. tools/check_urls.py fails the build if
+      they disagree, because a half-finished move silently breaks link previews
+      and search indexing. Servable from a subpath (GitHub Pages project sites)
+      because every asset path in this file is relative.
+    -->
+    <meta name="theme-color" content="#0b4ea2" />
+
+    <title>Clear Price — what do I pay after two discounts?</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; manifest-src 'self'; worker-src 'self'; connect-src 'self'; upgrade-insecure-requests" />
+    <meta
+      name="description"
+      content="Type the price and the discounts, see what you really pay. 20% off then 70% off is 76% off, not 90%. Free, no sign-up, works offline."
+    />
+    <link rel="canonical" href="https://jameroy21.github.io/clear-price/" />
+
+    <!-- Installable app -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Clear Price" />
+    <meta name="application-name" content="Clear Price" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!--
+      iOS launch images. Without these, opening the app from the home screen
+      flashes white before the interface appears, which is exactly what makes a
+      web app feel like "the default application". Each line matches one device
+      size; iOS picks the closest. Regenerate with tools/make_brand_assets.py.
+    -->
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+      href="splash/splash-750x1334.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
+      href="splash/splash-828x1792.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+      href="splash/splash-1125x2436.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+      href="splash/splash-1170x2532.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+      href="splash/splash-1179x2556.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+      href="splash/splash-1284x2778.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
+      href="splash/splash-1290x2796.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)"
+      href="splash/splash-1536x2048.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)"
+      href="splash/splash-1668x2388.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
+      href="splash/splash-2048x2732.png"
+    />
+
+    <!-- Link previews (WhatsApp, iMessage, X, Facebook, Slack) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Clear Price" />
+    <meta property="og:title" content="Clear Price — what do I really pay?" />
+    <meta
+      property="og:description"
+      content="Two discounts on one tag? See the real price in one tap. $89 with 20% off then 70% off is $21.36."
+    />
+    <meta property="og:url" content="https://jameroy21.github.io/clear-price/" />
+    <!--
+      Absolute URLs are required: WhatsApp, iMessage, X, Facebook and Slack do
+      not resolve relative image paths. The ?v= is a cache buster — social
+      platforms cache previews hard, so bump it whenever og-image.png changes.
+      Replace the domain with your own (see DEPLOY.md step 5).
+    -->
+    <meta property="og:image" content="https://jameroy21.github.io/clear-price/og-image.png?v=1" />
+    <meta property="og:image:secure_url" content="https://jameroy21.github.io/clear-price/og-image.png?v=1" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta
+      property="og:image:alt"
+      content="Clear Price: $89.00 with 20% off then 70% off means you pay $21.36 and save $67.64."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Clear Price — what do I really pay?" />
+    <meta
+      name="twitter:description"
+      content="20% off then 70% off is 76% off, not 90%. See the real price in one tap."
+    />
+    <meta name="twitter:image" content="https://jameroy21.github.io/clear-price/og-image.png?v=1" />
+    <meta
+      name="twitter:image:alt"
+      content="Clear Price: $89.00 with 20% off then 70% off means you pay $21.36."
+    />
+
+    <!-- Machine-readable description of the app -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Clear Price",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any (web, iOS, Android)",
+        "description": "Shoppers type a tag price and up to two stacked discounts and instantly see the final price, the money saved and the true combined percentage off.",
+        "url": "https://jameroy21.github.io/clear-price/",
+        "softwareVersion": "1.2.0",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Sequential stacked-discount maths",
+          "Works offline once installed",
+          "Large, high-contrast numbers",
+          "No account, no tracking"
+        ],
+        "browserRequirements": "Requires JavaScript",
+        "copyrightHolder": { "@type": "Person", "name": "Jame Roy" },
+        "copyrightYear": 2026,
+        "license": "https://jameroy21.github.io/clear-price/terms.html",
+        "isAccessibleForFree": true,
+        "inLanguage": "en",
+        "creator": { "@type": "Person", "name": "Jame Roy" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do two stacked discounts work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The second discount comes off the already-discounted price. $89 with 20% off becomes $71.20; a further 70% off that is $21.36, which is 76% off the original price — not 90%."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is 20% off then 10% off the same as 30% off?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. $100 with 20% off is $80, then 10% off that is $72 — a 28% total discount, not 30%."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Clear Price work without internet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Once installed on your phone, it keeps working in stores with no signal, and the number is the same as the online calculation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Clear Price store my prices or need an account?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No account, no cookies and no database. The prices you type are used to do the calculation and are never saved."
+            }
+          }
+        ]
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-Cbbwzt51.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DJfcmxYt.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <h1>Clear Price</h1>
+      <p>
+        Clear Price works out what you really pay after one or two stacked
+        discounts. It needs JavaScript switched on.
+      </p>
+      <p>
+        The rule: the second discount comes off the already-discounted price. $89
+        with 20% off is $71.20; a further 70% off that is <strong>$21.36</strong>,
+        so you save $67.64 — that is 76% off, not 90%.
+      </p>
+    </noscript>
+  </body>
+</html>

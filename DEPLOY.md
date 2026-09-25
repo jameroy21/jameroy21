@@ -121,15 +121,16 @@ clicks — the full walkthrough is in [SETUP_GITHUB.md](SETUP_GITHUB.md).
 What the workflow does: `npm ci`, `npm run build:pages`, which is
 
 ```bash
-VITE_BASE=/clear-price/ \
+VITE_BASE=./ \
 VITE_CALC_MODE=local \
 VITE_ANALYTICS=off \
 VITE_SITE_URL=https://jameroy21.github.io/clear-price/ \
 vite build
 ```
 
-`VITE_BASE` makes every asset path relative so the site works from the
-`/clear-price/` subpath; `VITE_CALC_MODE=local` makes the app answer with
+`VITE_BASE=./` makes every asset path relative — not merely prefixed — so the
+same build works from the `/clear-price/` subpath today and from a bare domain
+root later, without rebuilding; `VITE_CALC_MODE=local` makes the app answer with
 on-device maths, because a static host has no Python. Before uploading, the
 workflow fails the build if any path is root-absolute or any backend URL got
 baked in — the two mistakes that produce a live 404. `tools/pages_check.sh`
@@ -235,18 +236,16 @@ user data, so an open origin policy leaks nothing.
    - **Vercel** → project → **Settings** → **Domains** → add it and follow the
      DNS instructions (an `A`/`CNAME` record).
    - **Render** (API) → optional: front it with `api.clearpriced.com`.
-3. **Rebuild for the new address.** The Pages build bakes its own path in
-   (`VITE_BASE=/clear-price/`), so an address change is a config change, not a
-   DNS-only move:
+3. **Point the build at the new address.** The Pages build uses a relative
+   base (`VITE_BASE=./`), so the files work at any address — a bare domain root
+   as happily as `/clear-price/`. The only thing to change is the address the
+   build advertises:
 
    ```jsonc
    // frontend/package.json -> scripts
-   "build:pages": "VITE_BASE=/ VITE_CALC_MODE=local VITE_ANALYTICS=off \
+   "build:pages": "VITE_BASE=./ VITE_CALC_MODE=local VITE_ANALYTICS=off \
                    VITE_SITE_URL=https://clearpriced.com vite build"
    ```
-
-   With a custom domain the site is served from the root, so the base becomes
-   `/`. If instead you keep the github.io address, change nothing.
 4. Update the canonical and social URLs everywhere at once — `frontend/index.html`
    (canonical, `og:url`), `frontend/public/robots.txt`,
    `frontend/public/sitemap.xml`, `APP_README.md`, `SETUP_GITHUB.md` — then run

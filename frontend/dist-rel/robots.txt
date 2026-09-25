@@ -1,0 +1,5 @@
+# Clear Price — a free discount calculator.
+User-agent: *
+Allow: /
+
+Sitemap: https://jameroy21.github.io/clear-price/sitemap.xml
