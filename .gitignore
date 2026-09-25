@@ -1,5 +1,8 @@
-# Python
-__pycache__/
+# Anonymous usage counts (local/dev database — never commit)
+*.db
+*.db-wal
+*.db-shm
+stats.db*
 *.py[cod]
 .venv/
 venv/

@@ -5,7 +5,11 @@ and no personal data, which removes most of the risk that security work usually
 chases. What follows is what is actually enforced, how to verify it, and what
 still needs doing before you call a launch "done".
 
-**Last reviewed:** 25 September 2026 · **Version:** 1.1.0
+**Last reviewed:** 25 September 2026 · **Version:** 1.2.0
+
+**Ownership:** © 2026 Jame Roy. All rights reserved. This is proprietary
+software — see [LICENSE](LICENSE). Report security issues privately (section 5);
+please do not publish a working exploit.
 
 ---
 
@@ -23,7 +27,10 @@ still needs doing before you call a launch "done".
 | 8 | **Transport interception** — someone on the store Wi-Fi altering the answer | Public Wi-Fi is the normal case | HTTPS enforced everywhere; `Strict-Transport-Security` with `preload`; `upgrade-insecure-requests` in the CSP |
 | 9 | **Cache leakage** — a shared/kiosk browser showing the last shopper's price | Shared phones and tablets are common | `Cache-Control: no-store` on `/calculate`; the answer is cleared the moment any field changes; the service worker never caches API responses |
 | 10 | **Supply chain** — a malicious npm/pip package | Two dependency trees | Two runtime Python deps and four frontend deps; no post-install scripts added by us; lockfile committed and installs use it; `npm audit` / `pip-audit` in the checklist below |
-| 11 | **PII exposure** | The strongest thing we can say is that we hold nothing | No database, no cookies, no accounts, no analytics, no request-body logging; prices are used for one request and discarded — see [privacy.html](frontend/public/privacy.html) |
+| 11 | **PII exposure from the endpoint itself** | The strongest thing we can say is that prices are not stored | No database for prices, no cookies, no accounts, no request-body logging; prices are used for one request and discarded — see [privacy.html](frontend/public/privacy.html) |
+| 12 | **Abuse of the counting endpoint** — `/track` spammed to poison the stats or exhaust the free tier | A second POST endpoint | Its own rate-limit bucket (30/min), the same 4 KB body cap, and counting is *distinct devices*, so repeats cannot inflate anything |
+| 13 | **The usage counter becoming a tracker** — the honest risk of any analytics | Counting usage is the one place PII could sneak in | Device ids are replaced by `HMAC-SHA256(STATS_SECRET, id)` before storage; the table is exactly `(day, device, kind)` with no column for an identity; `extra="forbid"` rejects smuggled fields; count only, never lists; retention enforced; opt-out honoured (in-app switch, DNT, GPC). Tests assert each of these — see [ANALYTICS.md](ANALYTICS.md) |
+| 14 | **The owner report leaking** | It is the only endpoint with privileged data (aggregates) | Bearer `STATS_TOKEN`, constant-time comparison, `Cache-Control: no-store`, and 404 — not 401 — when no token is configured, so an unconfigured deploy exposes nothing |
 
 **Explicitly out of scope:** a targeted attacker with control of the platform
 account, physical device access, or the shopper's own browser. For an app with no
@@ -59,6 +66,12 @@ data and no money, those are not worth trading usability for.
   the limiters — so even a 429 or 413 is readable by the browser and carries the
   full header set. Tested.
 - **No secrets in the repo**, no `.env` committed, config is environment-only.
+  `STATS_SECRET` and `STATS_TOKEN` are generated on the host (`render.yaml` uses
+  `generateValue: true`), never hard-coded.
+- **Anonymous counting that cannot become tracking** — pseudonymised device ids,
+  a three-column schema with nowhere to put an identity, distinct-device counting,
+  enforced retention, and a working opt-out (footer switch, Do Not Track, Global
+  Privacy Control). `STATS_SECRET` rotation breaks all linkage by design.
 
 ### Frontend (`frontend/`)
 
@@ -91,10 +104,11 @@ in the first place.
 ## 3. Verify it yourself
 
 ```bash
-# Backend: 42 tests, covering the hardening layer specifically
+# Backend: 67 tests — maths, hardening, and the privacy claims of the counters
 cd backend && pytest -q
 
-# Frontend: 47 checks, including offline mode and the install flow
+# Frontend: 80 checks, including offline mode, install flow, ownership footer,
+# and that the opt-out switch really stops all sending
 cd frontend && npm run test:ui
 
 # Server and browser maths agree on 8001 cases, including half-cent boundaries
@@ -136,8 +150,13 @@ the memory bounds on the rate-limit table.
       public.
 - [ ] Check the deployed site on an SSL Labs test and at
       [securityheaders.com](https://securityheaders.com) — expect A/A+.
-- [ ] Re-run `pytest`, `npm run test:ui` and `check_parity.py` after any math or
-      dependency change.
+- [ ] `STATS_SECRET` and `STATS_TOKEN` generated on the host (not committed), and
+      `/stats/summary` confirmed to 401 without the token.
+- [ ] Decide consciously whether to count at all: `STATS_DB=off` plus
+      `VITE_ANALYTICS=off` turns it off everywhere. The privacy page must match
+      whichever choice you make.
+- [ ] Re-run `pytest`, `npm run test:ui`, `check_parity.py` and
+      `check_splash.py` after any maths, asset or dependency change.
 
 ---
 

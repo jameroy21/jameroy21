@@ -11,6 +11,10 @@ Writes into frontend/public/:
     icons/apple-touch-icon.png    iOS home screen (180, no transparency)
     icons/favicon-32.png          browser tab
     og-image.png                  1200x630 link preview (WhatsApp, X, iMessage...)
+    splash/splash-WxH.png         iOS launch images (branded open, not a white flash)
+
+Screenshots for the install dialog are captured from the running app by
+tools/make_screenshots.mjs — real pixels rather than a drawing.
 
 The mark: a white price tag, tilted, with a % on it — legible at 32px.
 """
@@ -22,13 +26,18 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC = ROOT / "frontend" / "public"
 ICONS = PUBLIC / "icons"
+SPLASH = PUBLIC / "splash"
 
 BRAND = (11, 78, 162)  # #0b4ea2
 BRAND_DARK = (7, 58, 121)  # #073a79
 WHITE = (255, 255, 255)
 INK = (11, 18, 32)  # #0b1220
+INK_SOFT = (51, 65, 85)  # #334155
+CANVAS = (238, 242, 247)  # #eef2f7
+LINE = (148, 163, 184)  # #94a3b8
 SAVED_GREEN = (15, 123, 63)  # #0f7b3f
 PALE = (207, 224, 247)  # #cfe0f7
+BOX_GREEN = (126, 231, 135)  # #7ee787, the "you saved" colour on the dark panel
 
 BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 REGULAR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -188,8 +197,60 @@ def make_og_image() -> Image.Image:
     return img
 
 
+# ---------------------------------------------------------------- splash --- #
+
+# Every iPad/iPhone the app is likely to be launched on. iOS shows the matching
+# image while the app starts, so the first thing a shopper sees is the brand
+# instead of a white rectangle.
+SPLASH_SIZES = [
+    (750, 1334),   # iPhone SE / 8
+    (828, 1792),   # iPhone XR / 11
+    (1125, 2436),  # iPhone X / XS / 11 Pro
+    (1170, 2532),  # iPhone 12 / 13 / 14
+    (1179, 2556),  # iPhone 15 / 15 Pro / 16
+    (1284, 2778),  # iPhone 14 Plus / 13 Pro Max
+    (1290, 2796),  # iPhone 15 Pro Max / 16 Plus
+    (1536, 2048),  # iPad 9.7 / mini
+    (1668, 2388),  # iPad Pro 11
+    (2048, 2732),  # iPad Pro 12.9
+]
+
+
+def make_splash(width: int, height: int) -> Image.Image:
+    """Brand background, tag mark, wordmark. Portrait only, like the app."""
+    img = brand_background(height).resize((width, height), Image.BILINEAR)
+
+    unit = min(width, height)
+    mark_size = int(unit * 0.34)
+    mark = Image.new("RGBA", (mark_size, mark_size), (0, 0, 0, 0))
+    draw_tag(mark, mark_size, tag_w_ratio=0.62, tag_h_ratio=0.44)
+    mark = mark.rotate(-16, resample=Image.BICUBIC, center=(mark_size / 2, mark_size / 2))
+
+    mark_x = (width - mark_size) // 2
+    mark_y = int(height * 0.36)
+    img.paste(mark, (mark_x, mark_y), mark)
+
+    d = ImageDraw.Draw(img)
+    title_font = font(BOLD, int(unit * 0.085))
+    tagline_font = font(REGULAR, int(unit * 0.042))
+
+    for text, f, offset, fill in (
+        ("Clear Price", title_font, int(unit * 0.035), WHITE),
+        ("What will I really pay?", tagline_font, int(unit * 0.145), PALE),
+    ):
+        box = d.textbbox((0, 0), text, font=f)
+        d.text(
+            ((width - (box[2] - box[0])) / 2 - box[0], mark_y + mark_size + offset - box[1]),
+            text,
+            font=f,
+            fill=fill,
+        )
+    return img
+
+
 def main() -> None:
     ICONS.mkdir(parents=True, exist_ok=True)
+    SPLASH.mkdir(parents=True, exist_ok=True)
 
     make_icon(512).save(ICONS / "icon-512.png", optimize=True)
     make_icon(192).save(ICONS / "icon-192.png", optimize=True)
@@ -198,6 +259,10 @@ def main() -> None:
     make_icon(180).save(ICONS / "apple-touch-icon.png", optimize=True)
     make_icon(32).save(ICONS / "favicon-32.png", optimize=True)
     make_og_image().save(PUBLIC / "og-image.png", optimize=True)
+
+    for width, height in SPLASH_SIZES:
+        make_splash(width, height).save(SPLASH / f"splash-{width}x{height}.png", optimize=True)
+
 
     for path in sorted(PUBLIC.rglob("*.png")):
         print(f"{path.relative_to(ROOT)}  ({path.stat().st_size / 1024:.1f} KB)")

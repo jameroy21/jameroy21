@@ -1,0 +1,76 @@
+Clear Price — Proprietary Software License
+Copyright (c) 2026 Jame Roy. All rights reserved.
+
+                       *** PROPRIETARY — NOT OPEN SOURCE ***
+
+This repository and everything in it — the Clear Price application, its source
+code, its design, its user interface, its name and logo, its written content,
+and the idea and method of presenting stacked-discount results as implemented
+here (together, "the Software") — is the exclusive property of Jame Roy
+("the Owner").
+
+No licence is granted by publication. This repository is visible for
+demonstration, review and portfolio purposes only. Making the source viewable
+does NOT place it in the public domain and does NOT make it open source.
+
+1. WHAT YOU MAY NOT DO WITHOUT PRIOR WRITTEN PERMISSION FROM THE OWNER
+
+   a. Copy, reproduce, or store the Software outside of viewing this repository.
+   b. Modify, adapt, translate, or create derivative works from the Software,
+      including re-implementing its design, wording or user experience.
+   c. Distribute, publish, sublicense, sell, rent, lease, or otherwise make the
+      Software available to any third party, in source or compiled form.
+   d. Deploy the Software, in whole or in part, as your own product or service,
+      or as part of another product or service.
+   e. Use the name "Clear Price", the tag logo, or any confusingly similar name
+      or mark, in connection with any product or service.
+   f. Remove, obscure, or alter this notice or any copyright, ownership or
+      attribution notice in the Software.
+
+2. WHAT YOU MAY DO
+
+   a. View this repository and its documentation.
+   b. Link to, reference, and describe the Software in its published, hosted
+      form, without implying endorsement, partnership or ownership.
+   c. Use the hosted application as an end user, for personal shopping
+      decisions, free of charge.
+
+3. THIRD-PARTY COMPONENTS
+
+   The Software depends on third-party packages (FastAPI, Uvicorn, Pydantic,
+   React, Vite, and others), each governed by its own licence. This licence
+   applies to the Owner's original work, not to those components. Nothing here
+   restricts any right granted to you directly by a third-party licence.
+
+4. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, ACCURACY AND NONINFRINGEMENT.
+
+   Clear Price is a shopping aid, not a pricing authority. Prices, discounts and
+   totals are calculations from the numbers you enter. Retailers' systems, and
+   the price at the register, always govern. Do not rely on this application for
+   any financial, legal or contractual decision.
+
+5. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL THE OWNER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+6. ENFORCEMENT AND PERMISSIONS
+
+   The Owner intends to enforce these rights. Requests for permission — including
+   licensing, white-labelling, commercial use, or contributions — should be
+   directed to the Owner through the contact details on the project profile.
+   Permission is granted only in writing, and only for the specific use stated.
+
+7. GOVERNING LAW
+
+   This licence is governed by the laws of the Owner's place of residence,
+   without regard to conflict-of-law rules.
+
+By using, copying, or distributing any part of the Software, you agree to the
+terms above. If you do not agree, do not use the Software.

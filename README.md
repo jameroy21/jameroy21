@@ -71,7 +71,12 @@ Two discounts stack sequentially — 20% off followed by 70% off is **76% off, n
 so a $89 tag becomes $21.36. Installs to the home screen and keeps working with **no
 signal** (the real situation in a store), with big-type, high-contrast UI and the number
 keypad on phones. Rate-limited, CSP-protected, no accounts and no data stored.  
-→ [Docs](CLEAR_PRICE.md) · [Deploy](DEPLOY.md) · [Launch & SEO playbook](LAUNCH.md) · [Security](SECURITY.md) · [Install/widgets](INSTALL.md)
+Installs as its own branded app (name, icon, iOS launch screens), not a generic
+bookmark, and tells the owner how many devices installed it and whether they come
+back — **without a single login, email or phone number**.  
+→ [Docs](CLEAR_PRICE.md) · [Deploy](DEPLOY.md) · [Launch & SEO playbook](LAUNCH.md) · [Security](SECURITY.md) · [Install/widgets](INSTALL.md) · [Anonymous analytics](ANALYTICS.md) · [Licence](LICENSE)
+
+© 2026 Jame Roy. Proprietary — all rights reserved (see [LICENSE](LICENSE)).
 
 ### 🤖 AI-Powered Cold Email Generator
 **Tech:** Python, Llama 3.0, LangChain, Streamlit  

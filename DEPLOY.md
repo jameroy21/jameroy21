@@ -63,10 +63,21 @@ Render needs: ALLOWED_ORIGINS   = the Vercel URL
    | `RATE_LIMIT` | `60` | Calculations per minute per IP |
    | `MAX_BODY_BYTES` | `4096` | Request size cap |
    | `ALLOWED_HOSTS` | `clear-price-api.onrender.com` | Optional: rejects forged Host headers. Leave unset until you know the hostname |
+   | `STATS_SECRET` | a 64-character random hex string | **Set this.** It pseudonymises device ids for the anonymous counts. Without it, counts reset on every restart |
+   | `STATS_TOKEN` | a long random string | Your key to read the owner report at `/stats/summary`. Unset means the report does not exist |
+   | `STATS_DB` | `stats.db` | Where counts are stored. `off` disables counting entirely |
+   | `STATS_RETENTION_DAYS` | `400` | How long anonymous counts are kept |
+   | `RATE_LIMIT_TRACK` | `30` | `/track` requests per minute per IP, separate from the calculator |
 
 4. **Create Web Service** and wait for **Live**.
 
 ### Check it
+
+Generate the two secrets first (see ANALYTICS.md for what they do):
+
+```bash
+python3 -c "import secrets; print('STATS_SECRET=' + secrets.token_hex(32)); print('STATS_TOKEN=' + secrets.token_urlsafe(32))"
+```
 
 ```bash
 curl https://clear-price-api.onrender.com/health
@@ -103,6 +114,14 @@ curl -X POST https://clear-price-api.onrender.com/calculate \
 
    ```
    VITE_API_BASE_URL = https://clear-price-api.onrender.com
+   ```
+
+   Optional but worth it while you are here:
+
+   ```
+   VITE_SITE_URL        = https://your-app.vercel.app   # used when sharing from the app
+   VITE_ANALYTICS       = on                            # off = never count anything
+   VITE_APP_VERSION     = 1.2.0                         # shown in the footer and sent with counts
    ```
 
    No trailing slash. Vite inlines this at build time, so changing it requires a
@@ -149,7 +168,19 @@ user data, so an open origin policy leaks nothing.
    *"Offline — the same maths, done on your phone."*
 4. Tap **Install app** (Android) or Share → Add to Home Screen (iPhone), then
    open it from the icon — it should run full-screen with no browser toolbar.
-5. Check the headers: [securityheaders.com](https://securityheaders.com) should
+5. Install it (Android: **Install app**; iPhone: Share → Add to Home Screen) and
+   confirm it opens full-screen with a brand splash, not a white flash.
+6. Check your own numbers:
+
+   ```bash
+   curl -s https://clear-price-api.onrender.com/stats/summary \
+     -H "Authorization: Bearer $STATS_TOKEN" | python3 -m json.tool
+   ```
+
+   A fresh deploy should read `installs_total: 0` — so install it once yourself
+   and watch it become 1. If it stays at 0, `STATS_SECRET` is missing or the
+   request never reached the API.
+7. Check the headers: [securityheaders.com](https://securityheaders.com) should
    give A/A+, and an SSL Labs scan should give an A.
 
 ---
@@ -219,4 +250,7 @@ git add -A && git commit -m "..." && git push
 | Blank page on Vercel | Wrong Root Directory | Must be `frontend` |
 | `422` for valid-looking input | Values outside 0–100, a negative price, or an extra field | `extra="forbid"` is on by design |
 | `429 Too many requests` while testing | You are the script | Raise `RATE_LIMIT` temporarily or wait a minute |
+| Installs always read 0 | `STATS_SECRET` unset (counts reset each restart), or `STATS_DB=off` | Set both, then redeploy — see ANALYTICS.md |
+| `/stats/summary` returns 404 | No `STATS_TOKEN` configured (by design) | Set it, redeploy |
+| Counts reset after a deploy | Free tier has an ephemeral disk | Attach a Render disk at `/var/data` and set `STATS_DB=/var/data/stats.db` |
 | `413` on a normal request | Body over 4 KB | Only three numbers are needed; a proxy is inflating the request |

@@ -19,13 +19,21 @@ Run locally:
 Deploy (Render):
     uvicorn main:app --host 0.0.0.0 --port $PORT
 
-Configuration (all optional — see SECURITY.md):
+Copyright (c) 2026 Jame Roy. All rights reserved.
+See LICENSE — this is proprietary software, not open source.
+
+Configuration (all optional — see SECURITY.md and ANALYTICS.md):
     ALLOWED_ORIGINS     comma separated frontend origins; default "*"
     ALLOWED_HOSTS       comma separated Host allowlist; default off
     TRUST_PROXY         1 to believe X-Forwarded-For (default: on for Render)
     RATE_LIMIT          requests per window per IP on /calculate; default 60
     RATE_WINDOW_SECONDS window length in seconds; default 60
     MAX_BODY_BYTES      largest accepted request body; default 4096
+    STATS_DB            anonymous usage database; default "stats.db" (":memory:" to keep it in RAM)
+    STATS_SECRET        secret that pseudonymises device ids. SET THIS IN PRODUCTION
+    STATS_TOKEN         bearer token for the owner-only /stats/summary report
+    STATS_RETENTION_DAYS how long anonymous counts are kept; default 400
+    RATE_LIMIT_TRACK    /track requests per window per IP; default 30
 """
 
 from __future__ import annotations
@@ -33,7 +41,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -47,6 +55,19 @@ from security import (
     SecurityHeadersMiddleware,
     SlidingWindowLimiter,
 )
+from stats import EVENT_KINDS, StatsStore, compare_token, resolve_secret
+
+# --------------------------------------------------------------------------- #
+# Ownership
+# --------------------------------------------------------------------------- #
+
+#: Shown in the API metadata and in the app footer. All rights reserved —
+#: see LICENSE. The idea, the name, the design and this code belong to the
+#: owner; nothing here grants a licence to copy, clone or resell.
+OWNER = "Jame Roy"
+OWNER_URL = os.getenv("OWNER_URL", "https://github.com/jameroy21").rstrip("/")
+COPYRIGHT_YEAR = 2026
+APP_VERSION = "1.2.0"
 
 # --------------------------------------------------------------------------- #
 # Core calculation
@@ -133,6 +154,36 @@ class CalculateResponse(BaseModel):
     total_discount_pct: float
 
 
+class TrackRequest(BaseModel):
+    """Body of POST /track — anonymous usage counting.
+
+    Deliberately tiny: a random id that exists only on the shopper's device, and
+    which of the two events happened. `extra="forbid"` means a client cannot
+    smuggle anything else in (prices, emails, a user agent) even by accident.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    device_id: str = Field(
+        ...,
+        min_length=8,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9_-]+$",
+        description="Random id created on the device. Contains nothing about the person.",
+    )
+    kind: str = Field(..., description="'install' (once per device) or 'open' (once per day).")
+    app_version: str | None = Field(
+        default=None,
+        max_length=16,
+        pattern=r"^[0-9A-Za-z._-]*$",
+        description="Which version of the app sent this, to see update adoption.",
+    )
+
+    @property
+    def valid_kind(self) -> bool:
+        return self.kind in EVENT_KINDS
+
+
 # --------------------------------------------------------------------------- #
 # Configuration helpers (pure functions of the environment, so they are testable)
 # --------------------------------------------------------------------------- #
@@ -211,17 +262,38 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Clear Price API",
-        version="1.1.0",
+        version=APP_VERSION,
         summary="Work out the real price after one or two stacked discounts.",
         description=(
             "Discounts are applied one after the other, so a 20% discount followed by "
             "a 70% discount is **not** 90% off. The second discount lands on the "
-            "already reduced price."
+            "already reduced price.\n\n"
+            "© 2026 Jame Roy. Proprietary software — see LICENSE."
         ),
-        # Do not hand out schema URLs or server banners a probe could use.
+        contact={"name": "Clear Price", "url": OWNER_URL},
+        license_info={"name": "Proprietary — All rights reserved", "url": f"{OWNER_URL}/terms"},
+        # Do not hand out a second schema UI a probe could use.
         docs_url="/docs",
         redoc_url=None,
     )
+
+    # Anonymous usage counting. Disabled entirely when STATS_DB is "off".
+    raw_db = _get(env, "STATS_DB", "stats.db")
+    store: StatsStore | None = None
+    if raw_db.lower() not in {"off", "none", "disabled"}:
+        secret, ephemeral = resolve_secret(dict(env))
+        store = StatsStore(
+            raw_db,
+            secret=secret,
+            retention_days=_env_int(env, "STATS_RETENTION_DAYS", 400),
+        )
+        if ephemeral:
+            print(
+                "WARNING: STATS_SECRET is not set, so device counts reset on every "
+                "restart. Set STATS_SECRET on the host (see ANALYTICS.md)."
+            )
+
+    stats_token = _get(env, "STATS_TOKEN")
 
     # Middleware order matters. Starlette wraps in reverse order of registration,
     # so the LAST one added is the OUTERMOST:
@@ -236,10 +308,24 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
     if hosts:
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
 
+    trust_proxy = trust_proxy_default(env)
+    counting_paths = ("/calculate", "/track")
+
     app.add_middleware(
         BodySizeLimitMiddleware,
         max_bytes=_env_int(env, "MAX_BODY_BYTES", DEFAULT_MAX_BODY_BYTES),
-        paths=("/calculate",),
+        paths=counting_paths,
+    )
+    # Two separate buckets: hammering /track must never stop someone from
+    # getting a price, and vice versa.
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=SlidingWindowLimiter(
+            max_requests=_env_int(env, "RATE_LIMIT_TRACK", 30),
+            window_seconds=_env_float(env, "RATE_WINDOW_SECONDS", DEFAULT_RATE_WINDOW),
+        ),
+        trust_proxy=trust_proxy,
+        paths=("/track",),
     )
     app.add_middleware(
         RateLimitMiddleware,
@@ -247,7 +333,7 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
             max_requests=_env_int(env, "RATE_LIMIT", DEFAULT_RATE_LIMIT),
             window_seconds=_env_float(env, "RATE_WINDOW_SECONDS", DEFAULT_RATE_WINDOW),
         ),
-        trust_proxy=trust_proxy_default(env),
+        trust_proxy=trust_proxy,
         paths=("/calculate",),
     )
     app.add_middleware(
@@ -258,13 +344,21 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
     )
-    app.add_middleware(SecurityHeadersMiddleware, no_store_paths=("/calculate",))
+    # Prices and usage counts are never cacheable (shared/kiosk phones).
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        no_store_paths=("/calculate", "/track", "/stats/summary"),
+    )
 
     @app.get("/", include_in_schema=False)
     def root() -> dict:
         """Tiny welcome payload — handy when checking that a deploy is alive."""
         return {
             "service": "Clear Price API",
+            "version": APP_VERSION,
+            "owner": OWNER,
+            "copyright": f"(c) {COPYRIGHT_YEAR} {OWNER}. All rights reserved.",
+            "license": "Proprietary. See /terms.",
             "endpoint": "POST /calculate",
             "example": {
                 "request": {"original_price": 89, "discount1_pct": 20, "discount2_pct": 70},
@@ -282,6 +376,45 @@ def create_app(env: Mapping[str, str] | None = None) -> FastAPI:
     def health() -> dict:
         """For Render health checks and uptime pings."""
         return {"status": "ok"}
+
+    @app.post("/track", include_in_schema=True)
+    def track(payload: TrackRequest) -> dict:
+        """Count an anonymous install or app open.
+
+        There is no login anywhere in this product, on purpose. To know how many
+        people installed it and whether they come back, the app sends a random
+        id that exists only on that device, plus which of the two events
+        happened. The id is immediately replaced by a keyed hash; the raw id is
+        never written down, and no IP address, user agent or price is received
+        or stored. See ANALYTICS.md.
+        """
+        if not payload.valid_kind:
+            raise HTTPException(status_code=422, detail="Unknown event kind.")
+        if store is None:
+            # Counting switched off: tell the client so it stops trying.
+            return {"ok": True, "stored": False, "reason": "counting disabled"}
+
+        stored = store.record(payload.device_id, payload.kind)
+        return {"ok": True, "stored": stored}
+
+    @app.get("/stats/summary", include_in_schema=False)
+    def stats_summary(authorization: str = Header(default="")) -> dict:
+        """Owner-only aggregate report: installs, active users, retention.
+
+        Requires `Authorization: Bearer <STATS_TOKEN>`. With no STATS_TOKEN set
+        the endpoint answers 404, so a deploy without the variable exposes
+        nothing at all. Counts are always distinct devices — there is no way to
+        see an individual.
+        """
+        if not stats_token:
+            raise HTTPException(status_code=404, detail="Not found")
+        if not authorization.lower().startswith("bearer "):
+            raise HTTPException(status_code=401, detail="Missing bearer token")
+        if not compare_token(authorization.split(" ", 1)[1].strip(), stats_token):
+            raise HTTPException(status_code=401, detail="Invalid token")
+        if store is None:
+            raise HTTPException(status_code=404, detail="Not found")
+        return store.summary()
 
     @app.post("/calculate", response_model=CalculateResponse)
     def calculate(payload: CalculateRequest) -> CalculateResponse:

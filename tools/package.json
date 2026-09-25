@@ -1,0 +1,13 @@
+{
+  "name": "clear-price-tools",
+  "private": true,
+  "type": "module",
+  "description": "Repo tooling: brand assets and real screenshots of the running app. Not part of the deployed app, so these dependencies are kept out of frontend/package.json and never reach Vercel or Render.",
+  "scripts": {
+    "screenshots": "node make_screenshots.mjs"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium": "^131.0.1",
+    "puppeteer-core": "^23.11.1"
+  }
+}

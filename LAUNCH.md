@@ -211,6 +211,44 @@ anything competitive on its own. The plan is therefore:
 
 Do not skip step 2 — links alone will not rank a page that has nothing to read.
 
+### The category (Schema.org) — "a special SEO category"
+
+Search engines classify a web app by its `applicationCategory`, and getting this
+right decides **which of Google's app surfaces you are even eligible for** and how
+the result is labelled. Clear Price declares
+[`WebApplication`](https://schema.org/WebApplication) with
+`"applicationCategory": "UtilitiesApplication"` — the reference term shopping
+calculators use — alongside `operatingSystem: "Any (web, iOS, Android)"`,
+`isAccessibleForFree: true`, `softwareVersion`, `creator` and `copyrightHolder`.
+
+The full category ladder in Schema.org looks like this, and the choice is a
+keyword decision as much as a technical one:
+
+| Category | Use it when | Fit for Clear Price |
+| -------- | ----------- | ------------------- |
+| `UtilitiesApplication` | A small tool that does one job | ✅ **Declared** — broad, no ambiguity, matches "calculator" intent |
+| `FinanceApplication` | Budgeting, accounting, loans | Possible, but implies financial advice we do not give |
+| `ShoppingApplication` | Browsing or buying products | Close second: it is used *while* shopping |
+| `BusinessApplication` | Workplace tools | ❌ |
+| `EducationalApplication` | Teaching how something works | Could earn the "learning" associations for the 20%+20% maths |
+
+Practical notes:
+
+- The manifest also declares `"categories": ["shopping", "utilities", "finance"]`,
+  which is what app-store-like surfaces (Chrome's install UI, some search
+  features) read. The JSON-LD `applicationCategory` is the one search engines
+  parse.
+- Keep the app's *purpose* words inside the HTML as text — "discount calculator",
+  "stacked discounts", "what you really pay", "works offline". Schema markup
+  reinforces what the page says; it cannot replace it.
+- Only one `applicationCategory` per app is meaningful. Do not list several to
+  "cover more"; that reads as spam.
+- Money content is scrutinised harder (`FinanceApplication` triggers YMYL-style
+  expectations for expertise and trust signals). Staying in `UtilitiesApplication`
+  while still answering finance-adjacent questions is deliberate: the page
+  explains arithmetic, it does not give financial advice. That is also exactly
+  what the terms page says.
+
 ### The keyword map (verify volumes in Keyword Planner before committing)
 
 | Query type | Example query | Intent | Page to build |
@@ -240,7 +278,8 @@ indexed**, not before.
 - [ ] One table or boxed example (the $89 case), because tables win snippets.
 - [ ] Internal links: answer page ↔ calculator ↔ related answer pages.
 - [ ] `FAQPage` / `HowTo` JSON-LD (the home page already ships `WebApplication` + `FAQPage`).
-- [ ] Canonical URL, real domain (replace the placeholder in `index.html`).
+- [ ] Canonical URL, real domain (replace the placeholder in `index.html`, `robots.txt`, `sitemap.xml`).
+- [ ] Social image is absolute and versioned (`og-image.png?v=1`) — bump `?v=` whenever the image changes, or WhatsApp and Facebook keep serving the old preview.
 - [ ] Loads in under 2 seconds on 3G — the current build is ~50 KB gzipped, so keep it that way: no heavy libraries, no web fonts.
 - [ ] Images have alt text (`og-image.png` already carries a written description).
 
@@ -252,7 +291,9 @@ indexed**, not before.
 | `sitemap.xml` | `frontend/public/sitemap.xml` | ✅ (replace the domain, add new pages) |
 | Canonical + OG + Twitter card | `frontend/index.html` | ✅ (replace the domain) |
 | `manifest.webmanifest` (installable, mobile-friendly signal) | `frontend/public/` | ✅ |
-| Structured data (`WebApplication`, `FAQPage`) | `frontend/index.html` | ✅ |
+| Structured data (`WebApplication` in `UtilitiesApplication` + `FAQPage` + creator/copyright) | `frontend/index.html` | ✅ |
+| Terms page for trust signals (E-E-A-T), linked from the footer | `frontend/public/terms.html` | ✅ |
+| Sitemap includes the terms page | `frontend/public/sitemap.xml` | ✅ |
 | Mobile-first, tap targets, no layout shift | `frontend/src/styles.css` | ✅ |
 | Renderable text content for crawlers | `index.html` `<noscript>` + the "How this works" block | ✅ |
 | HTTPS everywhere | Vercel + Render | ✅ |
@@ -359,6 +400,10 @@ fastest way to spend it.
 
 ## The short version
 
+0. **Before anything:** put the app on your own phone. Check the icon says
+   *Clear Price*, that it opens to a branded launch screen (not a white flash),
+   and that Settings → Add to Home Screen shows the right name. That is what
+   everyone else will see.
 1. **Today:** send the personal message to 25 friends, ask them to install it,
    collect what confuses them.
 2. **This week:** fix those confusions; buy the domain; put the real domain in

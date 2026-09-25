@@ -116,8 +116,9 @@ class SecurityHeadersMiddleware:
             return
 
         path = scope.get("path", "")
-        method = scope.get("method", "GET")
-        no_store = method == "POST" and any(path.endswith(p) for p in self.no_store_paths)
+        # Any response that carries a price or a usage count is uncacheable,
+        # whatever the method: shared and kiosk phones are a real scenario.
+        no_store = any(path.endswith(p) for p in self.no_store_paths)
 
         async def send_with_headers(message):
             if message["type"] == "http.response.start":

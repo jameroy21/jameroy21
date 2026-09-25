@@ -49,8 +49,11 @@ def calculate_price(original_price: float, discount1_pct: float, discount2_pct: 
 | ---------- | ---- |
 | Put it live (Render + Vercel, from scratch) | [DEPLOY.md](DEPLOY.md) |
 | Understand the security posture | [SECURITY.md](SECURITY.md) |
-| Get people using it / launch it | [LAUNCH.md](LAUNCH.md) |
+| Get people using it / launch it, with SEO | [LAUNCH.md](LAUNCH.md) |
 | Install it on a phone, or add a widget | [INSTALL.md](INSTALL.md) |
+| Know how many people use it, without logins | [ANALYTICS.md](ANALYTICS.md) |
+| See the ownership and licence terms | [LICENSE](LICENSE) · [/terms](/terms) |
+| See what has shipped | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
 
@@ -62,24 +65,32 @@ backend/
   security.py              rate limiting, body cap, security headers (no deps)
   requirements.txt         runtime deps (fastapi, uvicorn, pydantic)
   requirements-dev.txt     + pytest, httpx
+  stats.py                 anonymous usage counting (HMAC'd device ids, no PII)
   tests/test_calculate.py  21 tests: the maths, validation, CORS
   tests/test_security.py   21 tests: headers, limits, spoofing, memory bounds
+  tests/test_stats.py      25 tests: counting, privacy guarantees, owner access
 frontend/
   src/App.jsx              the whole screen (one component, no navigation)
   src/api.js               talks to the API, falls back to on-device maths
   src/calculate.js         the offline maths, parity-tested against Python
   src/InstallPrompt.jsx    "Install app" (Android) / "Add to Home Screen" (iOS)
+  src/analytics.js         anonymous install/open counts; DNT + opt-out honoured
+  src/ShareButton.jsx      share sheet with the brand and the result attached
   src/styles.css           mobile-first, big-type styles
-  public/manifest.webmanifest   installable app metadata + shortcuts
+  public/manifest.webmanifest   installable app metadata, id, scope, shortcuts
+  public/splash/           iOS launch images (10 device sizes) — opens branded
   public/sw.js             service worker: instant opens, offline app shell
-  public/privacy.html      plain-language privacy page
+  public/privacy.html      plain-language privacy notice
+  public/terms.html        terms of use (ownership, no warranty, acceptable use)
   public/robots.txt|sitemap.xml|og-image.png   SEO + link previews
-  tests/ui.smoke.mjs       47 checks: UI, offline mode, install, SEO assets
+  tests/ui.smoke.mjs       80 checks: UI, offline, install, ownership, privacy
   vite.config.js           dev proxy, preview hosts, build-time CSP
   vercel.json              SPA routing + security headers for Vercel
 tools/
-  make_brand_assets.py     regenerates the icons and the social card
+  make_brand_assets.py     regenerates icons, splash screens and the social card
   check_parity.py          fuzzes server maths vs on-device maths (8001 cases)
+  check_splash.py          proves every declared iOS launch image exists
+  make_screenshots.mjs     captures real install-dialog screenshots (needs a local browser)
 render.yaml                Render blueprint for the backend
 ```
 
@@ -108,11 +119,14 @@ it to FastAPI (`vite.config.js`), so there is nothing to configure.
 ### Tests
 
 ```bash
-cd backend  && pytest -q                     # 42 tests
-cd frontend && npm run test:ui               # 47 checks (backend must be running)
+cd backend  && pytest -q                     # 67 tests
+cd frontend && npm run test:ui               # 80 checks (backend must be running)
 
 # The offline maths must equal the server maths, exactly, on 8001 fuzz cases:
 .venv/bin/python tools/check_parity.py
+
+# Every iOS launch image declared in index.html actually exists:
+.venv/bin/python tools/check_splash.py
 ```
 
 ---
@@ -204,6 +218,24 @@ Locally, leave `VITE_API_BASE_URL` empty and the dev proxy handles it (copy
 
 ---
 
+## Who owns it
+
+Clear Price is **proprietary software**: © 2026 Jame Roy, all rights reserved.
+See [LICENSE](LICENSE) for the exact terms — publication here grants no licence to
+copy, modify, redistribute or resell. The app footer and the [terms page](/terms)
+carry the same notice for end users, and the API reports owner, copyright and
+licence on `GET /`.
+
+## Knowing people use it, without logins
+
+There is no login anywhere, deliberately. Instead the app counts two anonymous
+things — "this device installed it" (once) and "this device opened it today" —
+using a random id created on the phone, which the server immediately replaces
+with a keyed hash. The owner gets installs, active-today/7-day/30-day users and
+retention; nobody can be identified, because nothing identifying is ever
+received or stored. **Full detail, including the exact table schema and the
+opt-out controls: [ANALYTICS.md](ANALYTICS.md).**
+
 ## Security & privacy
 
 Hardened by default, with nothing extra to install or audit: per-IP rate
@@ -229,6 +261,7 @@ threat model, and a go-live checklist: [SECURITY.md](SECURITY.md).
 ## Not in v1 (noted for later)
 
 Third stacked discount · currency selector · share the result as an image ·
-"what % off was that?" reverse mode · camera/OCR price-tag scanning · price-per-unit
-comparison · a real Android widget via a Play Store wrapper. Priorities, effort
-sizing and the reasoning are in [LAUNCH.md](LAUNCH.md) (Part 5).
+"what % off was that?" reverse mode · camera/OCR price-tag scanning ·
+price-per-unit comparison · a real Android widget via a Play Store wrapper
+(the same web code, wrapped with Bubblewrap — see [INSTALL.md](INSTALL.md)).
+Priorities, effort sizing and the reasoning are in [LAUNCH.md](LAUNCH.md) (Part 5).

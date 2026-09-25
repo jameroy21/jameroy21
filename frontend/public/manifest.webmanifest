@@ -1,16 +1,28 @@
 {
-  "name": "Clear Price — discount calculator",
+  "id": "/",
+  "name": "Clear Price \u2014 discount calculator",
   "short_name": "Clear Price",
-  "description": "See what you really pay after one or two stacked discounts. Big numbers, no jargon, works offline.",
+  "description": "See what you really pay after one or two stacked discounts. Big numbers, no jargon, works offline. No account needed.",
   "start_url": "/?from=app",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#0b4ea2",
-  "categories": ["shopping", "utilities", "finance"],
+  "categories": [
+    "shopping",
+    "utilities",
+    "finance"
+  ],
   "lang": "en",
-  "dir": "ltr",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -37,7 +49,12 @@
       "short_name": "New price",
       "description": "Open straight to the price fields",
       "url": "/?action=new",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

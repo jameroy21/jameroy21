@@ -1,7 +1,19 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
+import {
+  APP_VERSION,
+  analyticsConfigured,
+  noteAppOpened,
+  noteInstalled,
+  setStatsEnabled,
+  statsEnabledByUser,
+} from "./analytics.js";
 import { ApiError, calculatePrice } from "./api.js";
 import InstallPrompt from "./InstallPrompt.jsx";
+import ShareButton from "./ShareButton.jsx";
+
+/** © 2026 Jame Roy — all rights reserved. See LICENSE. */
+const OWNER = "Jame Roy";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -53,6 +65,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [statsOn, setStatsOn] = useState(statsEnabledByUser);
 
   const ids = {
     price: useId(),
@@ -61,6 +74,26 @@ export default function App() {
     error: useId(),
   };
   const resultRef = useRef(null);
+
+  /**
+   * Count this visit (anonymous, once per day — see analytics.js) and listen for
+   * the browser confirming an install. Nothing here ever affects the maths, and
+   * nothing is sent when the shopper has opted out or their browser asks not to
+   * be tracked.
+   */
+  useEffect(() => {
+    noteAppOpened();
+    const onInstalled = () => noteInstalled();
+    window.addEventListener("appinstalled", onInstalled);
+    return () => window.removeEventListener("appinstalled", onInstalled);
+  }, []);
+
+  function toggleStats() {
+    const next = !statsOn;
+    setStatsOn(next);
+    setStatsEnabled(next);
+    if (next) noteAppOpened();
+  }
 
   /**
    * Any change to a number clears the previous answer, so what is on screen can
@@ -244,6 +277,7 @@ export default function App() {
                 Offline — the same maths, done on your phone.
               </p>
             ) : null}
+            <ShareButton result={result} formatMoney={money.format} />
           </>
         ) : null}
       </section>
@@ -269,10 +303,31 @@ export default function App() {
       </details>
 
       <footer className="footer">
-        <span>Free. No account. Nothing stored.</span>
-        <a className="footer__link" href="/privacy.html">
-          Privacy
-        </a>
+        <p className="footer__promise">
+          Free. No account. No personal data — ever.
+        </p>
+        <p className="footer__actions">
+          <ShareButton variant="link" />
+          {analyticsConfigured ? (
+            <button
+              type="button"
+              className="footer__link"
+              onClick={toggleStats}
+              aria-pressed={statsOn}
+            >
+              Anonymous counts: {statsOn ? "On" : "Off"}
+            </button>
+          ) : null}
+          <a className="footer__link" href="/terms">
+            Terms
+          </a>
+          <a className="footer__link" href="/privacy.html">
+            Privacy
+          </a>
+        </p>
+        <p className="footer__legal">
+          © {new Date().getFullYear()} {OWNER}. All rights reserved. v{APP_VERSION}
+        </p>
       </footer>
     </main>
   );

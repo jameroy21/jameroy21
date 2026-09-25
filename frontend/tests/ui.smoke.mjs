@@ -21,10 +21,11 @@ import { JSDOM } from "jsdom";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BACKEND = (process.env.TEST_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
-// The app reads this at build time; setting it here makes the component call the
-// backend with an absolute URL, exactly like the deployed build does.
+// The app reads these at build time; setting them here makes the component call
+// the backend with an absolute URL, exactly like the deployed build does.
 process.env.VITE_API_BASE_URL = BACKEND;
 process.env.BACKEND_URL = BACKEND;
+process.env.VITE_ANALYTICS_ENDPOINT = BACKEND;
 
 // --- is the backend there? -------------------------------------------------- //
 try {
@@ -57,13 +58,15 @@ dom.window.Element.prototype.scrollIntoView = function () {}; // jsdom has no la
 
 // A selectable fetch: the offline test flips this to reject.
 let fetchMode = "network";
+const trackedCalls = []; // every /track payload the app sent
 const realFetch = global.fetch;
-const pageFetch = (input, init) => {
-  if (fetchMode === "offline") return Promise.reject(new TypeError("Failed to fetch"));
-  return realFetch(
-    typeof input === "string" && input.startsWith("/") ? "http://localhost:5173" + input : input,
-    init
-  );
+const pageFetch = async (input, init) => {
+  const url = typeof input === "string" ? input : String(input?.url ?? input);
+  if (url.includes("/track")) {
+    trackedCalls.push(JSON.parse(init?.body || "{}"));
+  }
+  if (fetchMode === "offline") throw new TypeError("Failed to fetch");
+  return realFetch(url.startsWith("/") ? "http://localhost:5173" + url : url, init);
 };
 dom.window.fetch = pageFetch;
 global.fetch = pageFetch;
@@ -305,11 +308,67 @@ check(
 );
 check("the explainer starts collapsed, so the screen stays simple", app.container.querySelector("details")?.open === false);
 check("privacy is linked from the footer", app.container.querySelector('a[href="/privacy.html"]') !== null);
-check("footer says nothing is stored", /Nothing stored/.test(app.text()));
+// The footer must not overpromise: anonymous counts exist, so the copy says
+// "no personal data" rather than the untruthful "nothing is stored".
+check(
+  "footer makes the promise the code actually keeps",
+  /No account\. No personal data/.test(app.text()) && !/Nothing stored/i.test(app.text()),
+  app.text()
+);
 await app.unmount();
 
 // =========================================================================== //
-// 7. The shipped files that make it installable and shareable
+// 7. Ownership, sharing, and the counting promise
+// =========================================================================== //
+dom.window.localStorage.clear();
+trackedCalls.length = 0;
+app = await mount();
+
+check("the footer states the owner and the rights", /© \d{4} Jame Roy\. All rights reserved\. v\d/.test(app.text()), app.text());
+check("the footer shows the app version", /v1\.2\.0/.test(app.text()));
+check("terms of use are linked", app.container.querySelector('a[href="/terms"]') !== null);
+check("the privacy notice is linked", app.container.querySelector('a[href="/privacy.html"]') !== null);
+check("sharing is offered in the footer", app.text().includes("Share"));
+
+// Opening the app counts one anonymous open — no login anywhere.
+check(
+  "opening the app sends exactly one anonymous 'open'",
+  trackedCalls.length === 1 && trackedCalls[0].kind === "open",
+  JSON.stringify(trackedCalls)
+);
+check(
+  "the payload carries nothing about the person: id, kind, version only",
+  Object.keys(trackedCalls[0]).sort().join(",") === "app_version,device_id,kind",
+  Object.keys(trackedCalls[0]).join(",")
+);
+check(
+  "the id is random, not derived from the device",
+  /^[0-9a-f-]{36}$/.test(trackedCalls[0].device_id),
+  trackedCalls[0].device_id
+);
+
+// The shopper's switch must actually stop it.
+const statsToggle = [...app.container.querySelectorAll("button")].find((b) =>
+  /Anonymous counts/.test(b.textContent)
+);
+check("there is a switch for anonymous counting", statsToggle !== undefined);
+check("it starts on, and says so", /Anonymous counts: On/.test(app.text()), app.text());
+await act(async () => statsToggle.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+check("switching it off is reflected immediately", /Anonymous counts: Off/.test(app.text()), app.text());
+check("switching it off is remembered", dom.window.localStorage.getItem("clear-price:no-stats") === "1");
+
+trackedCalls.length = 0;
+await app.use("89", "20", "70");
+check("with counting off, no data is sent at all", trackedCalls.length === 0, JSON.stringify(trackedCalls));
+check("...but the app still works perfectly", app.text().includes("$21.36"), app.text());
+
+// Sharing carries the brand.
+check("a share button appears with the answer", app.text().includes("Share this price"));
+await app.unmount();
+dom.window.localStorage.clear();
+
+// =========================================================================== //
+// 8. The shipped files that make it installable, shareable and owned
 // =========================================================================== //
 const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "public/manifest.webmanifest"), "utf8"));
@@ -332,6 +391,48 @@ check("manifest: a long-press shortcut opens a new calculation", manifest.shortc
 check("manifest icons all exist on disk", manifest.icons.every((i) => fs.existsSync(path.join(ROOT, "public", i.src.replace(/^\//, "")))));
 
 check("service worker caches the app shell", sw.includes("/index.html") && sw.includes("caches.open"));
+check(
+  "manifest sets an app id and scope, so the install is this app (not a generic bookmark)",
+  manifest.id === "/" && manifest.scope === "/"
+);
+check(
+  "manifest declares the category it belongs in",
+  Array.isArray(manifest.categories) && manifest.categories.includes("shopping")
+);
+check(
+  "manifest declares no screenshots it cannot back up with a real capture",
+  !("screenshots" in manifest) || manifest.screenshots.every((shot) => fs.existsSync(path.join(ROOT, "public", shot.src.replace(/^\//, ""))))
+);
+
+const splashDir = path.join(ROOT, "public/splash");
+const splashFiles = fs.existsSync(splashDir) ? fs.readdirSync(splashDir) : [];
+const startupImages = [...html.matchAll(/apple-touch-startup-image[\s\S]{0,240}?href="\/splash\/([^"]+)"/g)].map((m) => m[1]);
+check("iOS launch images are declared", startupImages.length >= 8, String(startupImages.length));
+check(
+  "every declared launch image exists (no silent white flash on iOS)",
+  startupImages.length > 0 && startupImages.every((name) => splashFiles.includes(name)),
+  startupImages.join(",")
+);
+check(
+  "every launch image declares width, height and pixel ratio",
+  [...html.matchAll(/rel="apple-touch-startup-image"\s+media="([^"]+)"/g)].every(
+    ([, media]) => media.includes("device-width") && media.includes("device-height") && media.includes("-webkit-device-pixel-ratio")
+  )
+);
+check("link previews use absolute image URLs (relative ones are ignored by WhatsApp and iMessage)", /og:image" content="https:\/\//.test(html));
+check("the social image is versioned, so an update is not served from a stale cache", /og-image\.png\?v=/.test(html));
+check("the copyright holder is declared in the structured data", /"copyrightHolder"/.test(html) && /"Jame Roy"/.test(html));
+
+const terms = fs.existsSync(path.join(ROOT, "public/terms.html")) ? fs.readFileSync(path.join(ROOT, "public/terms.html"), "utf8") : "";
+check("a terms page exists", terms.length > 0);
+check("terms state that the register's price governs", /register/i.test(terms));
+check("terms assert ownership and reserve rights", /All rights reserved/.test(terms) && /property of its owner/i.test(terms));
+
+const licence = fs.existsSync(path.join(ROOT, "..", "LICENSE")) ? fs.readFileSync(path.join(ROOT, "..", "LICENSE"), "utf8") : "";
+check("a proprietary LICENSE exists", licence.length > 0 && /PROPRIETARY/i.test(licence));
+check("the LICENSE names the owner", /Jame Roy/.test(licence));
+check("the LICENSE forbids reuse without written permission", /WITHOUT PRIOR WRITTEN PERMISSION/i.test(licence));
+check("the LICENSE disclaims warranty for price decisions", /register/i.test(licence) || /pricing authority/i.test(licence));
 check("service worker never caches API calls", sw.includes('request.method !== "GET"') && sw.includes("url.origin !== self.location.origin"));
 
 console.log(failures === 0 ? "\nAll UI checks passed." : `\n${failures} UI check(s) failed.`);

@@ -19,7 +19,66 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Clear Price" />
+    <meta name="application-name" content="Clear Price" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!--
+      iOS launch images. Without these, opening the app from the home screen
+      flashes white before the interface appears, which is exactly what makes a
+      web app feel like "the default application". Each line matches one device
+      size; iOS picks the closest. Regenerate with tools/make_brand_assets.py.
+    -->
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
+      href="/splash/splash-750x1334.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)"
+      href="/splash/splash-828x1792.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)"
+      href="/splash/splash-1125x2436.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)"
+      href="/splash/splash-1170x2532.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
+      href="/splash/splash-1179x2556.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)"
+      href="/splash/splash-1284x2778.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)"
+      href="/splash/splash-1290x2796.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)"
+      href="/splash/splash-1536x2048.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)"
+      href="/splash/splash-1668x2388.png"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
+      href="/splash/splash-2048x2732.png"
+    />
 
     <!-- Link previews (WhatsApp, iMessage, X, Facebook, Slack) -->
     <meta property="og:type" content="website" />
@@ -30,9 +89,18 @@
       content="Two discounts on one tag? See the real price in one tap. $89 with 20% off then 70% off is $21.36."
     />
     <meta property="og:url" content="https://clear-price.vercel.app/" />
-    <meta property="og:image" content="/og-image.png" />
+    <!--
+      Absolute URLs are required: WhatsApp, iMessage, X, Facebook and Slack do
+      not resolve relative image paths. The ?v= is a cache buster — social
+      platforms cache previews hard, so bump it whenever og-image.png changes.
+      Replace the domain with your own (see DEPLOY.md step 5).
+    -->
+    <meta property="og:image" content="https://clear-price.vercel.app/og-image.png?v=1" />
+    <meta property="og:image:secure_url" content="https://clear-price.vercel.app/og-image.png?v=1" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
     <meta
       property="og:image:alt"
       content="Clear Price: $89.00 with 20% off then 70% off means you pay $21.36 and save $67.64."
@@ -43,7 +111,11 @@
       name="twitter:description"
       content="20% off then 70% off is 76% off, not 90%. See the real price in one tap."
     />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content="https://clear-price.vercel.app/og-image.png?v=1" />
+    <meta
+      name="twitter:image:alt"
+      content="Clear Price: $89.00 with 20% off then 70% off means you pay $21.36."
+    />
 
     <!-- Machine-readable description of the app -->
     <script type="application/ld+json">
@@ -55,6 +127,7 @@
         "operatingSystem": "Any (web, iOS, Android)",
         "description": "Shoppers type a tag price and up to two stacked discounts and instantly see the final price, the money saved and the true combined percentage off.",
         "url": "https://clear-price.vercel.app/",
+        "softwareVersion": "1.2.0",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "featureList": [
           "Sequential stacked-discount maths",
@@ -62,7 +135,13 @@
           "Large, high-contrast numbers",
           "No account, no tracking"
         ],
-        "browserRequirements": "Requires JavaScript"
+        "browserRequirements": "Requires JavaScript",
+        "copyrightHolder": { "@type": "Person", "name": "Jame Roy" },
+        "copyrightYear": 2026,
+        "license": "https://clear-price.vercel.app/terms",
+        "isAccessibleForFree": true,
+        "inLanguage": "en",
+        "creator": { "@type": "Person", "name": "Jame Roy" }
       }
     </script>
     <script type="application/ld+json">

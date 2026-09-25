@@ -5,6 +5,12 @@ download, no account, and nothing to pay. Installed, it opens full-screen from a
 icon on your home screen, keeps working with no signal, and never asks for a
 single permission.
 
+Installed, it behaves like a proper app rather than a saved link: the icon has the
+Clear Price name underneath it, the home screen and app switcher show the tag
+logo, and launching it shows the brand rather than a white flash. Nothing about
+the install is generic — that is the point of the manifest, the icon set and the
+launch images in this repository.
+
 The app shows its own **Install app** button when your browser allows it. If you
 do not see it, the steps below always work.
 
@@ -131,4 +137,5 @@ Do this only if the web version has real usage.
 | Button appeared, then the app "isn't installed" | The prompt was dismissed twice | Clear site data for the site, or install from the ⋮ menu |
 | "Offline — the same maths, done on your phone" | No signal; this is expected and correct | Nothing to do; the answer is identical to the server's |
 | Stale version after a deploy | Service worker holding the old shell | Close all app windows and reopen; the new version installs on next visit |
+| Opens to a white screen for a moment | Launch image missing for your device | Regenerate with `python tools/make_brand_assets.py`, then `python tools/check_splash.py` |
 | Old prices visible on a shared phone | Browser never caches answers, but the page stays open | Reload — answers are cleared as soon as a field changes |

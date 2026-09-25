@@ -1,7 +1,7 @@
 {
   "name": "clear-price-frontend",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "Clear Price — see the real price after stacked discounts",
   "scripts": {

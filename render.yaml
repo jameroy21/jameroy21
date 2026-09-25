@@ -40,3 +40,27 @@ services:
       # arrive with someone else's Host header.
       # - key: ALLOWED_HOSTS
       #   value: clear-price-api.onrender.com
+
+      # ---- Anonymous usage counting (see ANALYTICS.md) --------------------
+      # The app has no logins, on purpose. To know how many people installed it
+      # and how many come back, it counts distinct devices using a random id that
+      # never leaves the phone in readable form. No identities, no prices.
+      #
+      # STATS_SECRET is REQUIRED for the numbers to mean anything: without it a
+      # new random secret is generated on every start and the counts reset.
+      # Generate both values with:
+      #   python3 -c "import secrets; print(secrets.token_hex(32)); print(secrets.token_urlsafe(32))"
+      - key: STATS_SECRET
+        generateValue: true
+      - key: STATS_TOKEN
+        generateValue: true
+      # Free instances have an ephemeral disk: counts survive sleep, but reset on
+      # each deploy. Attach a paid disk mounted at /var/data and point STATS_DB
+      # there if you want them to persist. Set STATS_DB=off to not count at all.
+      - key: STATS_DB
+        value: stats.db
+      - key: STATS_RETENTION_DAYS
+        value: "400"
+      # Its own bucket, so counting traffic can never block a calculation.
+      - key: RATE_LIMIT_TRACK
+        value: "30"
