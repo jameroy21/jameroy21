@@ -32,3 +32,6 @@ Thumbs.db
 
 # Scratch output from tools/pages_check.sh (frontend/dist stays the real build)
 frontend/dist-pages-check/
+
+# Scratch output from testing an alternative base path
+frontend/dist-rel/
