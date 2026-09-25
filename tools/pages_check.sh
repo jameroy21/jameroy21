@@ -20,19 +20,25 @@ SUBPATH="${PAGES_SUBPATH:-clear-price}"
 STAGE="$(mktemp -d)"
 SERVER_PID=""
 
+CHECK_OUT=""
+
 cleanup() {
   [[ -n "$SERVER_PID" ]] && kill "$SERVER_PID" 2>/dev/null || true
   rm -rf "$STAGE"
+  [[ -n "$CHECK_OUT" ]] && rm -rf "$CHECK_OUT"
 }
 trap cleanup EXIT
 
 echo "==> building for /$SUBPATH/"
 cd "$ROOT/frontend"
-npm run build:pages >/dev/null
+CHECK_OUT="$PWD/dist-pages-check"
+# Build into a scratch output directory: a check must not clobber frontend/dist,
+# which may be serving a live preview with a different base path.
+npm run build:pages -- --outDir dist-pages-check >/dev/null
 
 echo "==> staging the build at /$SUBPATH/ (as Pages will serve it)"
 mkdir -p "$STAGE/$SUBPATH"
-cp -r dist/. "$STAGE/$SUBPATH/"
+cp -r dist-pages-check/. "$STAGE/$SUBPATH/"
 
 echo "==> starting a plain static server on port $PORT"
 ( cd "$STAGE" && python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 ) &
