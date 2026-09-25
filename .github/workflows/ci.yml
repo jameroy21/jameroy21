@@ -1,0 +1,95 @@
+# Continuous integration for Clear Price.
+#
+# A release tag should never point at a commit nobody checked. These jobs run on
+# every push and pull request, and they cover the three things that actually
+# break this app: the maths, the hardening, and the install.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The calculation, the security layer and the privacy guarantees.
+  backend:
+    name: Backend (maths, hardening, privacy)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest -q
+
+  # The app the shopper actually touches, plus every consistency check.
+  frontend:
+    name: Frontend (UI, offline, install, parity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Production build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Every version string agrees
+        run: python tools/check_versions.py
+
+      - name: Every iOS launch image exists
+        run: python tools/check_splash.py
+
+      - name: Install backend dependencies (for the live UI checks)
+        run: pip install -r backend/requirements-dev.txt
+
+      - name: Server maths and on-device maths agree
+        run: python tools/check_parity.py
+
+      - name: Start the API
+        working-directory: backend
+        env:
+          STATS_DB: /tmp/ci-stats.db
+        run: |
+          python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/health && break
+            sleep 1
+          done
+
+      - name: UI checks (renders the real app against the real API)
+        working-directory: frontend
+        run: npm run test:ui
