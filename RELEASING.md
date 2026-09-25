@@ -136,6 +136,25 @@ Good release notes answer four things:
 
 End with the licence line: © 2026 Jame Roy, all rights reserved.
 
+### Shipping the site to `clear-price`
+
+The public repository is a copy of this one, and its front page is
+`APP_README.md` rather than this repository's profile README:
+
+```bash
+git remote add clear-price https://github.com/jameroy21/clear-price.git   # once
+git push clear-price HEAD:main
+
+# keep its README pointing at the app, not at your GitHub profile
+git clone --depth 1 https://github.com/jameroy21/clear-price.git /tmp/cp
+cp APP_README.md /tmp/cp/README.md
+git -C /tmp/cp commit -am "Sync the app front page" && git -C /tmp/cp push
+```
+
+Pages rebuilds from `main` on every push, so the install address is up to date a
+minute later. Nothing is committed to git that a build can produce: the site is
+generated in CI, and the zip people download lives on the release.
+
 ## 7. Afterwards
 
 - [ ] Check the release renders: `gh release view v1.2.0 --json tagName,targetCommitish,isLatest,url`
