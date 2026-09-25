@@ -1,0 +1,222 @@
+# Deploying Clear Price — from scratch to a live URL
+
+Two free hosts, about 20 minutes, no credit card. Backend on **Render**
+(FastAPI), frontend on **Vercel** (React + Vite), both connected to this GitHub
+repo so every push deploys itself.
+
+Order matters: the backend first, because the frontend needs its URL, and then
+the frontend URL goes back into the backend's CORS settings.
+
+```
+GitHub repo ──┬──▶ Render  (backend, FastAPI)   https://clear-price-api.onrender.com
+              └──▶ Vercel  (frontend, React)    https://clear-price.vercel.app
+
+Vercel needs: VITE_API_BASE_URL = the Render URL
+Render needs: ALLOWED_ORIGINS   = the Vercel URL
+```
+
+---
+
+## 0. Five minutes before you start
+
+- [ ] Code pushed to GitHub (the repo this file lives in).
+- [ ] A [Render](https://render.com) account (GitHub sign-in is fine).
+- [ ] A [Vercel](https://vercel.com) account (GitHub sign-in is fine).
+- [ ] **2FA switched on** on GitHub, Render and Vercel.
+- [ ] Optionally, a domain you own (see step 5).
+
+---
+
+## 1. Backend → Render
+
+### Option A — the blueprint (fastest, uses `render.yaml`)
+
+1. Render dashboard → **New +** → **Blueprint**.
+2. Pick this repository → **Apply**.
+   Render reads `render.yaml` and creates the `clear-price-api` service with the
+   build command, start command, health check and environment variables already
+   set.
+3. Wait for the first deploy (2–3 minutes), then copy the service URL.
+
+### Option B — by hand
+
+1. **New +** → **Web Service** → connect this repository.
+2. Fill in **exactly** these settings:
+
+   | Field | Value |
+   | ----- | ----- |
+   | Name | `clear-price-api` |
+   | Language / Runtime | Python 3 |
+   | Root Directory | `backend` |
+   | Build Command | `pip install -r requirements.txt` |
+   | Start Command | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+   | Health Check Path | `/health` |
+   | Instance Type | Free |
+
+3. Add environment variables (Render → your service → **Environment**):
+
+   | Key | Value | Why |
+   | --- | ----- | --- |
+   | `PYTHON_VERSION` | `3.11.9` | Pins the interpreter |
+   | `ALLOWED_ORIGINS` | `https://your-app.vercel.app` | CORS. Put a placeholder now, fix it in step 4 |
+   | `TRUST_PROXY` | `1` | Render is behind a proxy; without this the rate limit counts the proxy, not shoppers. **Never set this where there is no proxy.** |
+   | `RATE_LIMIT` | `60` | Calculations per minute per IP |
+   | `MAX_BODY_BYTES` | `4096` | Request size cap |
+   | `ALLOWED_HOSTS` | `clear-price-api.onrender.com` | Optional: rejects forged Host headers. Leave unset until you know the hostname |
+
+4. **Create Web Service** and wait for **Live**.
+
+### Check it
+
+```bash
+curl https://clear-price-api.onrender.com/health
+# {"status":"ok"}
+
+curl -X POST https://clear-price-api.onrender.com/calculate \
+  -H 'Content-Type: application/json' \
+  -d '{"original_price":89,"discount1_pct":20,"discount2_pct":70}'
+# {"original_price":89.0,"final_price":21.36,"amount_saved":67.64,"total_discount_pct":76.0}
+```
+
+> **Free-tier note:** the instance sleeps after ~15 minutes idle. The first
+> request afterwards can take 30–60 seconds. The app shows *"Can't reach the
+> server"* if it gives up — that is the free plan, not a bug. Options: accept it,
+> ping `/health` from a free uptime monitor (e.g. UptimeRobot) every 10 minutes,
+> or move to a paid instance ($7/month) for an always-on service.
+
+---
+
+## 2. Frontend → Vercel
+
+1. Vercel dashboard → **Add New…** → **Project** → import this repository.
+2. Configure:
+
+   | Field | Value |
+   | ----- | ----- |
+   | Root Directory | `frontend` (**Edit** → select `frontend`) |
+   | Framework Preset | Vite (auto-detected) |
+   | Build Command | `npm run build` (default) |
+   | Output Directory | `dist` (default) |
+   | Install Command | `npm install` (default) |
+
+3. **Environment Variables** (add to Production **and** Preview):
+
+   ```
+   VITE_API_BASE_URL = https://clear-price-api.onrender.com
+   ```
+
+   No trailing slash. Vite inlines this at build time, so changing it requires a
+   redeploy — that is normal.
+
+4. **Deploy**. Note the URL Vercel gives you, e.g.
+   `https://clear-price.vercel.app`.
+
+The repo already ships `frontend/vercel.json`, which configures the SPA routing
+and all the security headers (HSTS, CSP carried in the HTML, `nosniff`,
+`X-Frame-Options`, `Permissions-Policy`, cache policy).
+
+---
+
+## 3. Complete the loop — CORS
+
+Go back to Render → **Environment** and set:
+
+```
+ALLOWED_ORIGINS = https://clear-price.vercel.app
+```
+
+Save; Render redeploys automatically. Then confirm from your own machine:
+
+```bash
+curl -i -X POST https://clear-price-api.onrender.com/calculate \
+  -H 'Origin: https://clear-price.vercel.app' \
+  -H 'Content-Type: application/json' \
+  -d '{"original_price":89,"discount1_pct":20,"discount2_pct":70}' | grep -i access-control
+# access-control-allow-origin: https://clear-price.vercel.app
+```
+
+If you use Vercel **preview** deployments as well, add those origins too
+(comma-separated), or keep `*` while you are still evaluating — the API holds no
+user data, so an open origin policy leaks nothing.
+
+---
+
+## 4. Smoke-test the live site
+
+1. Open the Vercel URL on your phone.
+2. Type `89`, `20`, `70` → tap **Show Final Price** → **$21.36**.
+3. Turn on **airplane mode** and repeat → the same answer, with
+   *"Offline — the same maths, done on your phone."*
+4. Tap **Install app** (Android) or Share → Add to Home Screen (iPhone), then
+   open it from the icon — it should run full-screen with no browser toolbar.
+5. Check the headers: [securityheaders.com](https://securityheaders.com) should
+   give A/A+, and an SSL Labs scan should give an A.
+
+---
+
+## 5. Custom domain (recommended, ~US$10–15/year)
+
+1. Buy a short, memorable domain (see `LAUNCH.md` for naming advice) — e.g.
+   `clearpriced.com`, `stackeddiscount.com`.
+2. **Vercel** → your project → **Settings** → **Domains** → add the domain →
+   follow the DNS instructions (an `A`/`CNAME` record at your registrar).
+3. In `frontend/index.html` replace the three placeholder
+   `https://clear-price.vercel.app` URLs (canonical, `og:url`) with the real
+   domain. Also update `frontend/public/robots.txt` and
+   `frontend/public/sitemap.xml`. Commit and push.
+4. Add the custom domain to Render's `ALLOWED_ORIGINS` (comma-separated with the
+   Vercel URL) and optionally front the API with its own subdomain
+   (e.g. `api.clearpriced.com`) via a Render custom domain, then update
+   `VITE_API_BASE_URL` in Vercel and redeploy.
+5. Set up the redirect so `www` and the apex both work (Vercel handles this by
+   default once both are added).
+
+---
+
+## 6. Shipping updates after launch
+
+The whole point of connecting the repo: `git push` is the deploy.
+
+```bash
+cd /path/to/repo
+# backend change?
+cd backend && pytest -q && cd ..
+# frontend change?
+cd frontend && npm run test:ui && cd ..      # needs the backend running
+.venv/bin/python tools/check_parity.py       # only if you touched the maths
+git add -A && git commit -m "..." && git push
+```
+
+- Render redeploys the backend on pushes to the connected branch.
+- Vercel redeploys the frontend, and gives every pull request its own preview
+  URL.
+- Users' installed apps pick up the new version on their next visit; the service
+  worker caches the app shell but always checks the network for the page itself,
+  so no one gets stuck on an old build.
+
+---
+
+## 7. Cost summary
+
+| Item | Free tier | When you would pay |
+| ---- | --------- | ------------------ |
+| Render web service | Sleeps when idle | $7/month for always-on |
+| Vercel hosting | 100 GB bandwidth/month | Rarely, at this size |
+| Domain | — | ~$10–15/year, worth it |
+| HTTPS | Included both hosts | — |
+| Database | Not used | — |
+| **Total to launch** | **$0** (or ~$12/year with a domain) | |
+
+---
+
+## 8. Troubleshooting
+
+| Symptom | Cause | Fix |
+| ------- | ----- | --- |
+| "Can't reach the server" after a quiet period | Render free tier asleep | Wait ~30–60s and press again; add an uptime ping |
+| CORS error in the console | `ALLOWED_ORIGINS` missing your exact origin (scheme, no trailing slash) | Copy the origin from the browser's address bar into Render's env var |
+| Frontend still calls `localhost` | `VITE_API_BASE_URL` not set, or set after the build | Set it in Vercel, then **Redeploy** |
+| Blank page on Vercel | Wrong Root Directory | Must be `frontend` |
+| `422` for valid-looking input | Values outside 0–100, a negative price, or an extra field | `extra="forbid"` is on by design |
+| `429 Too many requests` while testing | You are the script | Raise `RATE_LIMIT` temporarily or wait a minute |
+| `413` on a normal request | Body over 4 KB | Only three numbers are needed; a proxy is inflating the request |

@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from "react";
 
 import { ApiError, calculatePrice } from "./api.js";
+import InstallPrompt from "./InstallPrompt.jsx";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -238,9 +239,41 @@ export default function App() {
               {formatPercent(result.total_discount_pct)} off{" "}
               {money.format(result.original_price)}
             </p>
+            {result.offline ? (
+              <p className="result__note">
+                Offline — the same maths, done on your phone.
+              </p>
+            ) : null}
           </>
         ) : null}
       </section>
+
+      <InstallPrompt />
+
+      {/*
+        Kept closed by default: the screen stays simple, but search engines and
+        anyone who does read it get real, useful words instead of an empty page.
+      */}
+      <details className="explainer">
+        <summary className="explainer__summary">How this works</summary>
+        <div className="explainer__body">
+          <p>
+            A second discount comes off the already-discounted price, not the
+            original price. So 20% off and then another 70% off is not 90% off —
+            it is 76% off.
+          </p>
+          <p className="explainer__example">
+            $89, then 20% off: $71.20. Then 70% off that: $21.36. You save $67.64.
+          </p>
+        </div>
+      </details>
+
+      <footer className="footer">
+        <span>Free. No account. Nothing stored.</span>
+        <a className="footer__link" href="/privacy.html">
+          Privacy
+        </a>
+      </footer>
     </main>
   );
 }

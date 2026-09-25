@@ -3,6 +3,10 @@
 **See what you really pay.** Type the tag price, type the discount(s), press one
 button. Built for a phone in a store aisle — big text, high contrast, no jargon.
 
+Installable on any phone, and **works with no signal** once installed, which is
+the situation inside most big stores. No accounts, no cookies, no tracking, no
+database.
+
 > Your price is $89, the tag says **20% off**, and the clearance rack says **an
 > extra 70% off**. The register will not charge you $8.90 — it charges **$21.36**.
 
@@ -39,22 +43,44 @@ def calculate_price(original_price: float, discount1_pct: float, discount2_pct: 
 
 ---
 
+## Where to start
+
+| I want to… | Read |
+| ---------- | ---- |
+| Put it live (Render + Vercel, from scratch) | [DEPLOY.md](DEPLOY.md) |
+| Understand the security posture | [SECURITY.md](SECURITY.md) |
+| Get people using it / launch it | [LAUNCH.md](LAUNCH.md) |
+| Install it on a phone, or add a widget | [INSTALL.md](INSTALL.md) |
+
+---
+
 ## Layout
 
 ```
 backend/
-  main.py                  FastAPI app: the maths + POST /calculate
+  main.py                  FastAPI app: the maths + POST /calculate, config
+  security.py              rate limiting, body cap, security headers (no deps)
   requirements.txt         runtime deps (fastapi, uvicorn, pydantic)
   requirements-dev.txt     + pytest, httpx
   tests/test_calculate.py  21 tests: the maths, validation, CORS
+  tests/test_security.py   21 tests: headers, limits, spoofing, memory bounds
 frontend/
   src/App.jsx              the whole screen (one component, no navigation)
-  src/api.js               one fetch call to the API
+  src/api.js               talks to the API, falls back to on-device maths
+  src/calculate.js         the offline maths, parity-tested against Python
+  src/InstallPrompt.jsx    "Install app" (Android) / "Add to Home Screen" (iOS)
   src/styles.css           mobile-first, big-type styles
-  tests/ui.smoke.mjs       17 checks: renders the real UI in a real DOM
-  vite.config.js           dev proxy + preview-friendly host settings
-  .env.example             VITE_API_BASE_URL explained
-render.yaml                Render blueprint for the backend (optional)
+  public/manifest.webmanifest   installable app metadata + shortcuts
+  public/sw.js             service worker: instant opens, offline app shell
+  public/privacy.html      plain-language privacy page
+  public/robots.txt|sitemap.xml|og-image.png   SEO + link previews
+  tests/ui.smoke.mjs       47 checks: UI, offline mode, install, SEO assets
+  vite.config.js           dev proxy, preview hosts, build-time CSP
+  vercel.json              SPA routing + security headers for Vercel
+tools/
+  make_brand_assets.py     regenerates the icons and the social card
+  check_parity.py          fuzzes server maths vs on-device maths (8001 cases)
+render.yaml                Render blueprint for the backend
 ```
 
 ---
@@ -82,8 +108,11 @@ it to FastAPI (`vite.config.js`), so there is nothing to configure.
 ### Tests
 
 ```bash
-cd backend  && pytest -q            # 21 tests
-cd frontend && npm run test:ui      # 17 checks (needs the backend running)
+cd backend  && pytest -q                     # 42 tests
+cd frontend && npm run test:ui               # 47 checks (backend must be running)
+
+# The offline maths must equal the server maths, exactly, on 8001 fuzz cases:
+.venv/bin/python tools/check_parity.py
 ```
 
 ---
@@ -175,6 +204,15 @@ Locally, leave `VITE_API_BASE_URL` empty and the dev proxy handles it (copy
 
 ---
 
+## Security & privacy
+
+Hardened by default, with nothing extra to install or audit: per-IP rate
+limiting, a 4 KB request cap enforced even on lying `Content-Length` headers,
+security headers on every response (including errors), strict CSP with
+`connect-src` limited to your API origin, `Cache-Control: no-store` on results,
+optional Host allowlist, and no third-party requests at all. Full detail,
+threat model, and a go-live checklist: [SECURITY.md](SECURITY.md).
+
 ## Accessibility choices
 
 - Body text is 20px, the answer is 48px+ (`clamp(3rem, 16vw, 4.5rem)`), inputs 32px.
@@ -190,5 +228,7 @@ Locally, leave `VITE_API_BASE_URL` empty and the dev proxy handles it (copy
 
 ## Not in v1 (noted for later)
 
-Third stacked discount · camera/OCR price-tag scanning · share the result as an
-image · currency selector · offline mode.
+Third stacked discount · currency selector · share the result as an image ·
+"what % off was that?" reverse mode · camera/OCR price-tag scanning · price-per-unit
+comparison · a real Android widget via a Play Store wrapper. Priorities, effort
+sizing and the reasoning are in [LAUNCH.md](LAUNCH.md) (Part 5).

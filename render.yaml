@@ -1,7 +1,7 @@
 # Render blueprint for the Clear Price backend.
 #
 # In Render: New + > Blueprint > pick this repo. Render reads this file and
-# creates the web service below. The frontend lives on Vercel (see CLEAR_PRICE.md).
+# creates the web service below. The frontend lives on Vercel (see DEPLOY.md).
 services:
   - type: web
     name: clear-price-api
@@ -14,7 +14,29 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+
       # Comma-separated list of frontend origins allowed to call this API.
       # Replace with your real Vercel URL before (or right after) deploying.
       - key: ALLOWED_ORIGINS
         value: https://clear-price.vercel.app
+
+      # Render sits behind a proxy, so the real client IP is in X-Forwarded-For.
+      # This makes the rate limit count each shopper separately instead of
+      # counting the proxy. Never enable this on a host without a proxy.
+      - key: TRUST_PROXY
+        value: "1"
+
+      # Abuse limits. Generous enough that no real shopper can ever hit them:
+      # 60 calculations a minute from one address, and a 4 KB request cap
+      # (the real payload is about 60 bytes).
+      - key: RATE_LIMIT
+        value: "60"
+      - key: RATE_WINDOW_SECONDS
+        value: "60"
+      - key: MAX_BODY_BYTES
+        value: "4096"
+
+      # Optional, recommended once your URL is fixed: reject requests that
+      # arrive with someone else's Host header.
+      # - key: ALLOWED_HOSTS
+      #   value: clear-price-api.onrender.com

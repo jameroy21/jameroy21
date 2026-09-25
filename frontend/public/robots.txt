@@ -1,0 +1,5 @@
+# Clear Price — a free discount calculator.
+User-agent: *
+Allow: /
+
+Sitemap: https://clear-price.vercel.app/sitemap.xml

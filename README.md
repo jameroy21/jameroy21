@@ -68,8 +68,10 @@ Data Science professional with **3+ years** of experience transforming complex d
 **Tech:** Python, FastAPI, React, Vite  
 Mobile-first web app that answers one question for shoppers: *what do I really pay?*
 Two discounts stack sequentially — 20% off followed by 70% off is **76% off, not 90%** —
-so a $89 tag becomes $21.36. Big-type, high-contrast UI with the number keypad on phones.  
-→ [Project docs & deployment](CLEAR_PRICE.md)
+so a $89 tag becomes $21.36. Installs to the home screen and keeps working with **no
+signal** (the real situation in a store), with big-type, high-contrast UI and the number
+keypad on phones. Rate-limited, CSP-protected, no accounts and no data stored.  
+→ [Docs](CLEAR_PRICE.md) · [Deploy](DEPLOY.md) · [Launch & SEO playbook](LAUNCH.md) · [Security](SECURITY.md) · [Install/widgets](INSTALL.md)
 
 ### 🤖 AI-Powered Cold Email Generator
 **Tech:** Python, Llama 3.0, LangChain, Streamlit  

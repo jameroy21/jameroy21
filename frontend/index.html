@@ -5,14 +5,121 @@
     <!-- Zooming is deliberately left enabled: some shoppers need it. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0b4ea2" />
+
+    <title>Clear Price — what do I pay after two discounts?</title>
     <meta
       name="description"
-      content="Clear Price — type the tag price and the discounts, see what you really pay."
+      content="Type the price and the discounts, see what you really pay. 20% off then 70% off is 76% off, not 90%. Free, no sign-up, works offline."
     />
-    <title>Clear Price</title>
+    <link rel="canonical" href="https://clear-price.vercel.app/" />
+
+    <!-- Installable app -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Clear Price" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Link previews (WhatsApp, iMessage, X, Facebook, Slack) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Clear Price" />
+    <meta property="og:title" content="Clear Price — what do I really pay?" />
+    <meta
+      property="og:description"
+      content="Two discounts on one tag? See the real price in one tap. $89 with 20% off then 70% off is $21.36."
+    />
+    <meta property="og:url" content="https://clear-price.vercel.app/" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Clear Price: $89.00 with 20% off then 70% off means you pay $21.36 and save $67.64."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Clear Price — what do I really pay?" />
+    <meta
+      name="twitter:description"
+      content="20% off then 70% off is 76% off, not 90%. See the real price in one tap."
+    />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Machine-readable description of the app -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Clear Price",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any (web, iOS, Android)",
+        "description": "Shoppers type a tag price and up to two stacked discounts and instantly see the final price, the money saved and the true combined percentage off.",
+        "url": "https://clear-price.vercel.app/",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Sequential stacked-discount maths",
+          "Works offline once installed",
+          "Large, high-contrast numbers",
+          "No account, no tracking"
+        ],
+        "browserRequirements": "Requires JavaScript"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do two stacked discounts work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The second discount comes off the already-discounted price. $89 with 20% off becomes $71.20; a further 70% off that is $21.36, which is 76% off the original price — not 90%."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is 20% off then 10% off the same as 30% off?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. $100 with 20% off is $80, then 10% off that is $72 — a 28% total discount, not 30%."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Clear Price work without internet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Once installed on your phone, it keeps working in stores with no signal, and the number is the same as the online calculation."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Clear Price store my prices or need an account?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No account, no cookies and no database. The prices you type are used to do the calculation and are never saved."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Clear Price</h1>
+      <p>
+        Clear Price works out what you really pay after one or two stacked
+        discounts. It needs JavaScript switched on.
+      </p>
+      <p>
+        The rule: the second discount comes off the already-discounted price. $89
+        with 20% off is $71.20; a further 70% off that is <strong>$21.36</strong>,
+        so you save $67.64 — that is 76% off, not 90%.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

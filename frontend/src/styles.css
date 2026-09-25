@@ -257,6 +257,126 @@ body {
   color: #e2e8f0;
 }
 
+/* Shown only when the answer was calculated on the device (no signal). */
+.result__note {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* --------------------------------------------------------------- install -- */
+
+.install {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: #e3edfb;
+  border: 2px solid #b9d2f2;
+  border-radius: var(--radius);
+}
+
+.install__button {
+  min-height: 3.25rem;
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--brand);
+  border: 2px solid var(--brand-dark);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.install__button:hover {
+  background: var(--brand-dark);
+}
+
+.install__hint {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.install__key {
+  font-weight: 800;
+  white-space: nowrap;
+  background: #fff;
+  border: 2px solid #b9d2f2;
+  border-radius: 8px;
+  padding: 0 0.35rem;
+}
+
+.install__dismiss {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+/* -------------------------------------------------------------- explains -- */
+
+.explainer {
+  border-radius: var(--radius);
+  font-size: 1.05rem;
+}
+
+.explainer__summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--brand-dark);
+  padding: 0.5rem 0.25rem;
+  list-style: none;
+}
+
+.explainer__summary::before {
+  content: "▸ ";
+}
+
+.explainer[open] .explainer__summary::before {
+  content: "▾ ";
+}
+
+.explainer__summary::-webkit-details-marker {
+  display: none;
+}
+
+.explainer__body {
+  padding: 0.25rem 0.75rem 0.75rem;
+  color: var(--ink-soft);
+}
+
+.explainer__example {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------------- footer -- */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+.footer__link {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
 /* ------------------------------------------------------------- wide view -- */
 
 @media (min-width: 480px) {
