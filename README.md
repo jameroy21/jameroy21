@@ -66,9 +66,11 @@ Data Science professional with **3+ years** of experience transforming complex d
 
 ### 🏷️ Clear Price — Stacked Discount Calculator
 
-[![CI](https://github.com/jameroy21/jameroy21/actions/workflows/ci.yml/badge.svg)](https://github.com/jameroy21/jameroy21/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/jameroy21/jameroy21?label=release)](https://github.com/jameroy21/jameroy21/releases)
+[![CI](https://github.com/jameroy21/clear-price/actions/workflows/ci.yml/badge.svg)](https://github.com/jameroy21/clear-price/actions/workflows/ci.yml)
+[![Pages](https://github.com/jameroy21/clear-price/actions/workflows/pages.yml/badge.svg)](https://jameroy21.github.io/clear-price/)
+[![Release](https://img.shields.io/github/v/release/jameroy21/clear-price?label=release)](https://github.com/jameroy21/clear-price/releases)
 
+**Install:** **[jameroy21.github.io/clear-price](https://jameroy21.github.io/clear-price/)** — open it on your phone, then **Share → Add to Home Screen** (iPhone) or **⋮ → Install app** (Android).  
 **Tech:** Python, FastAPI, React, Vite  
 Mobile-first web app that answers one question for shoppers: *what do I really pay?*
 Two discounts stack sequentially — 20% off followed by 70% off is **76% off, not 90%** —

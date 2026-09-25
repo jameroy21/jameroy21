@@ -12,17 +12,24 @@
  * No prices or answers are ever stored: only the app's own files.
  */
 
-const CACHE = "clear-price-v1";
+const CACHE = "clear-price-v2";
 
+// Relative on purpose. A service worker's scope is its own directory, so these
+// resolve to /clear-price/... on a GitHub Pages project site and to / on a
+// custom domain — the same file, no build-time rewriting, no broken precache.
+// (Bump CACHE whenever the shell changes, or clients keep the old files.)
 const SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/apple-touch-icon.png",
-  "/icons/favicon-32.png",
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon-32.png",
 ];
+
+/** Absolute URL for a shell entry, resolved against this script's location. */
+const absolute = (relative) => new URL(relative, self.location).href;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -30,7 +37,9 @@ self.addEventListener("install", (event) => {
       const cache = await caches.open(CACHE);
       // Individual puts: one missing file must not fail the whole install.
       await Promise.all(
-        SHELL.map((url) => cache.add(new Request(url, { cache: "reload" })).catch(() => {}))
+        SHELL.map((url) =>
+          cache.add(new Request(absolute(url), { cache: "reload" })).catch(() => {})
+        )
       );
       await self.skipWaiting();
     })()
@@ -61,13 +70,13 @@ self.addEventListener("fetch", (event) => {
         try {
           const fresh = await fetch(request);
           const cache = await caches.open(CACHE);
-          cache.put("/index.html", fresh.clone());
+          cache.put(absolute("./index.html"), fresh.clone());
           return fresh;
         } catch {
           const cache = await caches.open(CACHE);
           return (
-            (await cache.match("/index.html")) ||
-            (await cache.match("/")) ||
+            (await cache.match(absolute("./index.html"))) ||
+            (await cache.match(absolute("./"))) ||
             new Response("Clear Price is offline.", {
               status: 503,
               headers: { "Content-Type": "text/plain" },

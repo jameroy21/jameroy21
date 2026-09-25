@@ -96,7 +96,7 @@ price from your clipboard.
 
 1. Open the **Shortcuts** app → **+** to make a new shortcut.
 2. Add the action **Open URLs** and set the URL to your Clear Price address
-   (e.g. `https://clear-price.vercel.app`).
+   (e.g. `https://jameroy21.github.io/clear-price/`).
 3. Name it **Clear Price**, tap the icon to choose the tag logo.
 4. Go to the home screen → long-press the background → **Edit** → **Add Widget**
    → choose **Shortcuts** → pick the size → **Add Widget**.
@@ -108,7 +108,7 @@ offline, it will answer even with no signal.
 
 *Want it to prefill the price?* Add a **Get Clipboard** action before **Open
 URLs** and use
-`https://clear-price.vercel.app/?price=[Clipboard]` — the app reads a `price`
+`https://jameroy21.github.io/clear-price/?price=[Clipboard]` — the app reads a `price`
 parameter on load. Set the shortcut as a **Lock Screen** widget too, and you can
 tap it straight from the lock screen in a store.
 
@@ -145,7 +145,7 @@ No new UI code; Play Store listing and reviews; keeps the same URL and updates.
 
 ```bash
 npm install -g @bubblewrap/cli
-bubblewrap init --manifest https://clear-price.vercel.app/manifest.webmanifest
+bubblewrap init --manifest https://jameroy21.github.io/clear-price/manifest.webmanifest
 bubblewrap build          # produces app-release-bundle.aab
 # upload the .aab in the Play Console, then:
 bubblewrap update         # to pick up future web changes

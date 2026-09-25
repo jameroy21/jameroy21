@@ -1,0 +1,100 @@
+# Publish Clear Price to GitHub Pages.
+#
+# This is the "install address" workflow: it builds the frontend for a project
+# site (served from /clear-price/, not the domain root) and publishes it.
+#
+# One deliberate difference from the usual instructions: Pages is set to
+# "GitHub Actions" rather than "Deploy from a branch". The address is identical
+# (https://<owner>.github.io/clear-price/), but nothing has to be built by hand
+# and no build output is committed — the site is produced from source on every
+# push.
+#
+# Pages cannot run Python, so this build calculates on the device
+# (VITE_CALC_MODE=local). The maths is the same code the server uses, verified
+# against it on 8,001 cases by tools/check_parity.py.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it halfway, but only keep
+# one queued behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the installable site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Every version string agrees
+        run: python tools/check_versions.py
+
+      - name: Every absolute URL matches the canonical host
+        run: python tools/check_urls.py
+
+      - name: Every iOS launch image exists
+        run: python tools/check_splash.py
+
+      - name: Build for /clear-price/
+        working-directory: frontend
+        run: npm run build:pages
+
+      - name: Fail if the build has root-absolute asset paths
+        run: |
+          # A subpath deployment 404s on these, and only on a real phone.
+          if grep -oE '(href|src)="/[^"]*"' frontend/dist/index.html | grep -v '^src="/src/'; then
+            echo "::error::index.html contains root-absolute paths; they break on GitHub Pages"
+            exit 1
+          fi
+          echo "no root-absolute asset paths in the built page"
+
+      - name: Fail if the built page still calls an API
+        run: |
+          if grep -q "clear-price-api.onrender.com" frontend/dist/assets/*.js; then
+            echo "::error::this build is configured to call a backend; Pages has none"
+            exit 1
+          fi
+          echo "no backend is called by this build"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

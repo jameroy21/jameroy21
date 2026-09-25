@@ -15,7 +15,9 @@ createRoot(document.getElementById("root")).render(
 // and make hot reload confusing.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    // BASE_URL is "/" or "/clear-price/", so the worker registers inside the
+    // project path and its scope matches the pages it may serve.
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
       // No offline mode, no problem: the app still works normally online.
     });
   });

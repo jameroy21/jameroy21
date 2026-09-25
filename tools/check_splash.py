@@ -22,7 +22,11 @@ SPLASH_DIR = ROOT / "frontend" / "public" / "splash"
 
 def main() -> int:
     html = HTML.read_text()
-    referenced = set(re.findall(r'href="/splash/([^"]+)"', html))
+    # The href may be root-absolute ("/splash/x.png") or relative
+    # ("splash/x.png"). Relative is what the GitHub Pages build needs, because
+    # the site is served from the /clear-price/ subpath — matching only the
+    # absolute form silently reported "0 referenced" and hid every problem.
+    referenced = set(re.findall(r'href="(?:\./)?/?splash/([^"]+)"', html))
     on_disk = {path.name for path in SPLASH_DIR.glob("*.png")}
 
     missing = sorted(referenced - on_disk)
@@ -40,6 +44,10 @@ def main() -> int:
 
     # Every referenced image must also carry a media query, or iOS ignores it.
     blocks = re.findall(r'rel="apple-touch-startup-image"\s+media="([^"]+)"\s+href="([^"]+)"', html)
+    if not referenced:
+        print("\nNo splash images are referenced from index.html at all — "
+              "iOS will show a white flash when the installed app opens")
+        return 1
     if len(blocks) != len(referenced):
         print(f"\n{len(referenced)} images declared but only {len(blocks)} have media queries")
         return 1

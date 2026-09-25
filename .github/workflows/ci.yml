@@ -73,6 +73,9 @@ jobs:
       - name: Every iOS launch image exists
         run: python tools/check_splash.py
 
+      - name: Every absolute URL matches the canonical host
+        run: python tools/check_urls.py
+
       - name: Install backend dependencies (for the live UI checks)
         run: pip install -r backend/requirements-dev.txt
 
@@ -93,3 +96,6 @@ jobs:
       - name: UI checks (renders the real app against the real API)
         working-directory: frontend
         run: npm run test:ui
+
+      - name: Pages build works from a subpath with no backend
+        run: tools/pages_check.sh

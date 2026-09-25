@@ -8,6 +8,15 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 const API_BASE_URL = (process.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
 /**
+ * Where the site is served from.
+ *
+ * GitHub Pages serves a project site at /<repo>/, not at the root, so every
+ * asset path has to be built for that prefix. Vercel and a custom domain serve
+ * from the root. Set VITE_BASE to switch; the default is the root.
+ */
+const BASE = (process.env.VITE_BASE || "/").trim();
+
+/**
  * Inject a strict Content-Security-Policy into the **built** HTML only.
  *
  * Dev is left alone on purpose: Vite injects inline scripts for hot reload, and
@@ -49,6 +58,7 @@ function contentSecurityPolicy() {
 }
 
 export default defineConfig({
+  base: BASE.endsWith("/") ? BASE : `${BASE}/`,
   plugins: [react(), contentSecurityPolicy()],
   server: {
     host: true, // listen on 0.0.0.0 so the preview URL can reach it

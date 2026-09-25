@@ -276,6 +276,10 @@ export default function App() {
               <p className="result__note">
                 Offline — the same maths, done on your phone.
               </p>
+            ) : result.source === "local" ? (
+              <p className="result__note">
+                Worked out on your phone — no internet needed.
+              </p>
             ) : null}
             <ShareButton result={result} formatMoney={money.format} />
           </>
@@ -318,10 +322,10 @@ export default function App() {
               Anonymous counts: {statsOn ? "On" : "Off"}
             </button>
           ) : null}
-          <a className="footer__link" href="/terms">
+          <a className="footer__link" href="terms.html">
             Terms
           </a>
-          <a className="footer__link" href="/privacy.html">
+          <a className="footer__link" href="privacy.html">
             Privacy
           </a>
         </p>

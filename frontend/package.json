@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:ui": "node tests/ui.smoke.mjs"
+    "test:ui": "node tests/ui.smoke.mjs",
+    "build:pages": "VITE_BASE=/clear-price/ VITE_CALC_MODE=local VITE_ANALYTICS=off VITE_SITE_URL=https://jameroy21.github.io/clear-price vite build"
   },
   "dependencies": {
     "react": "^18.3.1",

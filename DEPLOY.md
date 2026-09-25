@@ -1,19 +1,28 @@
 # Deploying Clear Price — from scratch to a live URL
 
 Two free hosts, about 20 minutes, no credit card. Backend on **Render**
-(FastAPI), frontend on **Vercel** (React + Vite), both connected to this GitHub
-repo so every push deploys itself.
+(FastAPI). The frontend ships two ways: a **static GitHub Pages** build that
+answers on the phone with no server at all, and the same React app on
+**Vercel** wired to the API for the full counting setup. Both come from this
+GitHub repo so every push deploys itself.
 
 Order matters: the backend first, because the frontend needs its URL, and then
 the frontend URL goes back into the backend's CORS settings.
 
 ```
-GitHub repo ──┬──▶ Render  (backend, FastAPI)   https://clear-price-api.onrender.com
+GitHub repo ──┬──▶ Pages   (frontend, static)   https://jameroy21.github.io/clear-price/
+              │      └─ the install address: works offline, no server needed
+              ├──▶ Render  (backend, FastAPI)   https://clear-price-api.onrender.com
               └──▶ Vercel  (frontend, React)    https://clear-price.vercel.app
+                     └─ optional: the API-backed version with install counting
 
 Vercel needs: VITE_API_BASE_URL = the Render URL
 Render needs: ALLOWED_ORIGINS   = the Vercel URL
 ```
+
+**If all you want is the app on your phone, deploy §2 and stop** — GitHub Pages
+needs no account beyond the one you already have and no backend at all. Render
+and Vercel are for the version that counts installs and answers from the server.
 
 ---
 
@@ -97,7 +106,36 @@ curl -X POST https://clear-price-api.onrender.com/calculate \
 
 ---
 
-## 2. Frontend → Vercel
+## 2. Frontend → GitHub Pages (the install address)
+
+Nothing to sign up for, no build output in git, and it deploys itself on every
+push to `main`. The whole thing is `.github/workflows/pages.yml` plus four
+clicks — the full walkthrough is in [SETUP_GITHUB.md](SETUP_GITHUB.md).
+
+1. Repo → **Settings** → **Pages** → **Build and deployment → Source:**
+   **GitHub Actions**.
+2. Repo → **Actions** → **Deploy to GitHub Pages** → **Run workflow**.
+3. Wait for the green tick, then open
+   **https://jameroy21.github.io/clear-price/**.
+
+What the workflow does: `npm ci`, `npm run build:pages`, which is
+
+```bash
+VITE_BASE=/clear-price/ \
+VITE_CALC_MODE=local \
+VITE_ANALYTICS=off \
+VITE_SITE_URL=https://jameroy21.github.io/clear-price/ \
+vite build
+```
+
+`VITE_BASE` makes every asset path relative so the site works from the
+`/clear-price/` subpath; `VITE_CALC_MODE=local` makes the app answer with
+on-device maths, because a static host has no Python. Before uploading, the
+workflow fails the build if any path is root-absolute or any backend URL got
+baked in — the two mistakes that produce a live 404. `tools/pages_check.sh`
+runs the same test locally against a real static server.
+
+## 3. Frontend → Vercel (optional, for the API-backed version)
 
 1. Vercel dashboard → **Add New…** → **Project** → import this repository.
 2. Configure:
@@ -136,7 +174,7 @@ and all the security headers (HSTS, CSP carried in the HTML, `nosniff`,
 
 ---
 
-## 3. Complete the loop — CORS
+## 4. Complete the loop — CORS
 
 Go back to Render → **Environment** and set:
 
@@ -160,7 +198,7 @@ user data, so an open origin policy leaks nothing.
 
 ---
 
-## 4. Smoke-test the live site
+## 5. Smoke-test the live site
 
 1. Open the Vercel URL on your phone.
 2. Type `89`, `20`, `70` → tap **Show Final Price** → **$21.36**.
@@ -185,7 +223,7 @@ user data, so an open origin policy leaks nothing.
 
 ---
 
-## 5. Custom domain (recommended, ~US$10–15/year)
+## 6. Custom domain (recommended, ~US$10–15/year)
 
 1. Buy a short, memorable domain (see `LAUNCH.md` for naming advice) — e.g.
    `clearpriced.com`, `stackeddiscount.com`.
@@ -204,7 +242,7 @@ user data, so an open origin policy leaks nothing.
 
 ---
 
-## 6. Shipping updates after launch
+## 7. Shipping updates after launch
 
 The whole point of connecting the repo: `git push` is the deploy.
 
@@ -227,20 +265,24 @@ git add -A && git commit -m "..." && git push
 
 ---
 
-## 7. Cost summary
+## 8. Cost summary
 
 | Item | Free tier | When you would pay |
 | ---- | --------- | ------------------ |
-| Render web service | Sleeps when idle | $7/month for always-on |
-| Vercel hosting | 100 GB bandwidth/month | Rarely, at this size |
+| GitHub Pages (the install address) | 100 GB bandwidth/month, free forever on public repos | Never, unless you outgrow it — and even then a CDN sits in front for free |
+| Render web service (optional API) | Sleeps when idle | $7/month for always-on |
+| Vercel hosting (optional API build) | 100 GB bandwidth/month | Rarely, at this size |
 | Domain | — | ~$10–15/year, worth it |
 | HTTPS | Included both hosts | — |
 | Database | Not used | — |
 | **Total to launch** | **$0** (or ~$12/year with a domain) | |
 
+GitHub Pages is the part that costs nothing and needs no account: the app is
+static files, and the calculation happens on the phone.
+
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Symptom | Cause | Fix |
 | ------- | ----- | --- |

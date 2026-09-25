@@ -70,7 +70,9 @@ cd backend  && pytest -q                       # maths, hardening, privacy
 cd frontend && npm run test:ui                 # 80 checks (start the API first)
 .venv/bin/python tools/check_parity.py         # server maths == device maths
 .venv/bin/python tools/check_versions.py       # all sources agree
+.venv/bin/python tools/check_urls.py           # every URL on the canonical host
 .venv/bin/python tools/check_splash.py         # every iOS launch image exists
+tools/pages_check.sh                           # the GitHub Pages build works
 cd frontend && npm run build                   # production build is clean
 ```
 
@@ -94,17 +96,34 @@ git push
 
 ## 6. Cut the GitHub release
 
+Releases are cut in **`jameroy21/clear-price`** — the repository the install
+address is served from — not in the development mirror.
+
 ```bash
+# the zip that becomes the release asset, taken from the tested commit
+git archive --format=zip -o /tmp/clear-price-v1.2.0.zip HEAD
+shasum -a 256 /tmp/clear-price-v1.2.0.zip > /tmp/clear-price-v1.2.0.zip.sha256
+
 gh release create v1.2.0 \
+  --repo jameroy21/clear-price \
   --target "$(git rev-parse HEAD)" \
   --title "Clear Price v1.2.0 — <short promise>" \
-  --notes-file /tmp/release-notes.md \
-  --latest
+  --notes-file .github/release-notes/v1.2.0.md \
+  --latest \
+  /tmp/clear-price-v1.2.0.zip /tmp/clear-price-v1.2.0.zip.sha256
 ```
 
 **Always pass `--target`.** Without it, `gh` creates the tag from the repository's
 default branch, which may not contain the code you just tested — the release would
 point at the wrong commit.
+
+**Always attach the zip.** It is the copy people can keep, and it is the only
+artefact that still exists if the host ever disappears. The `.sha256` beside it
+lets anyone check the file survived the download intact. GitHub's own
+`Source code (zip)` links are generated, not attached — both should be present.
+
+Release notes live in `.github/release-notes/<version>.md`, so the exact text
+that shipped is reviewable in git next to the code it describes.
 
 Good release notes answer four things:
 
@@ -122,8 +141,13 @@ End with the licence line: © 2026 Jame Roy, all rights reserved.
 - [ ] Check the release renders: `gh release view v1.2.0 --json tagName,targetCommitish,isLatest,url`
 - [ ] Confirm the tag points at the commit you tested:
       `git rev-parse v1.2.0` should equal `git rev-parse HEAD` at tag time.
-- [ ] Redeploy if the host does not do it for you: Render and Vercel both deploy
-      from the branch on push, so a release normally needs nothing extra.
+- [ ] Confirm the install address is live and is serving the new build:
+      `tools/pages_check.sh` locally, then
+      <https://jameroy21.github.io/clear-price/> on a phone. Pages deploys from
+      `main` on push (`.github/workflows/pages.yml`), so a release normally
+      needs nothing extra; run the workflow by hand if a run was skipped.
+- [ ] Confirm the release has its asset:
+      `gh release view v1.2.0 --repo jameroy21/clear-price --json tagName,assets`
 - [ ] Installed apps pick up the new version on the next visit; the service worker
       checks the network for the page itself, so nobody is stuck on an old build.
 - [ ] If the release revealed a problem, do not delete the tag — publish a patch

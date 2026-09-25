@@ -57,13 +57,25 @@ global.cancelAnimationFrame = dom.window.cancelAnimationFrame?.bind(dom.window);
 dom.window.Element.prototype.scrollIntoView = function () {}; // jsdom has no layout
 
 // A selectable fetch: the offline test flips this to reject.
-let fetchMode = "network";
+let fetchMode = "network"; // "network" | "offline" | "static-host"
 const trackedCalls = []; // every /track payload the app sent
+const calcCalls = []; // every /calculate request the app made
 const realFetch = global.fetch;
 const pageFetch = async (input, init) => {
   const url = typeof input === "string" ? input : String(input?.url ?? input);
   if (url.includes("/track")) {
     trackedCalls.push(JSON.parse(init?.body || "{}"));
+  }
+  if (url.includes("/calculate")) {
+    calcCalls.push(url);
+    // A plain static host (GitHub Pages) answers 404 for an endpoint it does
+    // not serve. That must mean "calculate locally", never an error message.
+    if (fetchMode === "static-host") {
+      return new Response('{"detail":"Not Found"}', {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
   if (fetchMode === "offline") throw new TypeError("Failed to fetch");
   return realFetch(url.startsWith("/") ? "http://localhost:5173" + url : url, init);
@@ -307,7 +319,7 @@ check(
   app.text()
 );
 check("the explainer starts collapsed, so the screen stays simple", app.container.querySelector("details")?.open === false);
-check("privacy is linked from the footer", app.container.querySelector('a[href="/privacy.html"]') !== null);
+check("privacy is linked from the footer", app.container.querySelector('a[href="privacy.html"]') !== null);
 // The footer must not overpromise: anonymous counts exist, so the copy says
 // "no personal data" rather than the untruthful "nothing is stored".
 check(
@@ -318,6 +330,40 @@ check(
 await app.unmount();
 
 // =========================================================================== //
+// 6b. A host with no API at all (GitHub Pages)
+// =========================================================================== //
+// Pages serves static files only. /calculate returns 404 there — which must be
+// read as "no calculation service here", not as a failure the shopper can see.
+dom.window.localStorage.clear();
+calcCalls.length = 0;
+fetchMode = "static-host";
+app = await mount();
+await app.use("89", "20", "70");
+
+check("static host: the answer is still $21.36", app.text().includes("$21.36"), app.text());
+check("static host: the saving is still shown", app.text().includes("$67.64"));
+check(
+  "static host: no error is shown to the shopper",
+  !/Something went wrong|Can't reach/i.test(app.text()),
+  app.text()
+);
+check(
+  "static host: it says the answer was worked out on the phone",
+  /Worked out on your phone/.test(app.text()),
+  app.text()
+);
+check("static host: it did try the endpoint once", calcCalls.length >= 1);
+
+await app.use("100", "20", "10");
+check(
+  "static host: sequential maths still right ($72.00)",
+  app.text().includes("$72.00"),
+  app.text()
+);
+await app.unmount();
+fetchMode = "network";
+
+// =========================================================================== //
 // 7. Ownership, sharing, and the counting promise
 // =========================================================================== //
 dom.window.localStorage.clear();
@@ -326,8 +372,15 @@ app = await mount();
 
 check("the footer states the owner and the rights", /© \d{4} Jame Roy\. All rights reserved\. v\d/.test(app.text()), app.text());
 check("the footer shows the app version", /v1\.2\.0/.test(app.text()));
-check("terms of use are linked", app.container.querySelector('a[href="/terms"]') !== null);
-check("the privacy notice is linked", app.container.querySelector('a[href="/privacy.html"]') !== null);
+// Relative .html links: GitHub Pages has no SPA rewrite, so "/terms" would 404
+// there. These paths work on every static host.
+check("terms of use are linked", app.container.querySelector('a[href="terms.html"]') !== null);
+check("the privacy notice is linked", app.container.querySelector('a[href="privacy.html"]') !== null);
+check(
+  "footer links are relative, so they work on a subpath deploy (GitHub Pages)",
+  [...app.container.querySelectorAll("footer a")].every((a) => !a.getAttribute("href").startsWith("/")),
+  [...app.container.querySelectorAll("footer a")].map((a) => a.getAttribute("href")).join(", ")
+);
 check("sharing is offered in the footer", app.text().includes("Share"));
 
 // Opening the app counts one anonymous open — no login anywhere.
@@ -380,7 +433,12 @@ check("index.html has a 1200x630 social image for link previews", /og-image\.png
 check("index.html declares the app as JSON-LD", /"@type": "WebApplication"/.test(html));
 check("index.html answers the stacked-discount question for crawlers", /FAQPage/.test(html));
 
-check("manifest: name, start_url and standalone display", manifest.name === "Clear Price — discount calculator" && manifest.start_url === "/?from=app" && manifest.display === "standalone");
+check(
+  "manifest: name, start_url and standalone display",
+  manifest.name === "Clear Price — discount calculator" &&
+    manifest.start_url === "./?from=app" &&
+    manifest.display === "standalone"
+);
 check(
   "manifest: 192, 512 and maskable icons (needed to install on Android)",
   manifest.icons.some((i) => i.sizes === "192x192") &&
@@ -393,7 +451,14 @@ check("manifest icons all exist on disk", manifest.icons.every((i) => fs.existsS
 check("service worker caches the app shell", sw.includes("/index.html") && sw.includes("caches.open"));
 check(
   "manifest sets an app id and scope, so the install is this app (not a generic bookmark)",
-  manifest.id === "/" && manifest.scope === "/"
+  manifest.id === "./" && manifest.scope === "./"
+);
+check(
+  "manifest URLs are relative, so a subpath deploy (GitHub Pages) still installs",
+  [manifest.id, manifest.scope, manifest.start_url, ...manifest.icons.map((i) => i.src)].every(
+    (url) => !url.startsWith("/")
+  ),
+  [manifest.id, manifest.scope, manifest.start_url, ...manifest.icons.map((i) => i.src)].join(", ")
 );
 check(
   "manifest declares the category it belongs in",
@@ -406,7 +471,7 @@ check(
 
 const splashDir = path.join(ROOT, "public/splash");
 const splashFiles = fs.existsSync(splashDir) ? fs.readdirSync(splashDir) : [];
-const startupImages = [...html.matchAll(/apple-touch-startup-image[\s\S]{0,240}?href="\/splash\/([^"]+)"/g)].map((m) => m[1]);
+const startupImages = [...html.matchAll(/apple-touch-startup-image[\s\S]{0,240}?href="splash\/([^"]+)"/g)].map((m) => m[1]);
 check("iOS launch images are declared", startupImages.length >= 8, String(startupImages.length));
 check(
   "every declared launch image exists (no silent white flash on iOS)",
