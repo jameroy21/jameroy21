@@ -59,6 +59,7 @@ export default defineConfig({
     proxy: {
       // In development the app calls "/calculate" and Vite forwards it to FastAPI.
       "/calculate": { target: BACKEND_URL, changeOrigin: true },
+      "/track": { target: BACKEND_URL, changeOrigin: true },
       "/health": { target: BACKEND_URL, changeOrigin: true },
     },
   },
@@ -66,6 +67,15 @@ export default defineConfig({
     host: true,
     port: 4173,
     allowedHosts: true,
+    // Same proxy as the dev server, so the *production build* can be tested
+    // locally (and on a phone, over the preview tunnel) with real service-worker
+    // registration and offline support. Without this, a built app served here
+    // would call "/calculate" on this origin and get a 404.
+    proxy: {
+      "/calculate": { target: BACKEND_URL, changeOrigin: true },
+      "/track": { target: BACKEND_URL, changeOrigin: true },
+      "/health": { target: BACKEND_URL, changeOrigin: true },
+    },
   },
   build: {
     // The service worker is shipped from public/ untouched; make sure nothing

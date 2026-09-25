@@ -16,6 +16,44 @@ do not see it, the steps below always work.
 
 ---
 
+## Get it on your phone right now (2 minutes, no deploy)
+
+Use this to *try* it. For a version that lives on your phone for good, deploy
+first (see the box at the end) — a sandbox link is temporary.
+
+1. **Open the app link in your phone's browser.** Type it, or send the link to
+   yourself and tap it. Do not use a QR scanner app that opens its own browser —
+   open the link directly in Safari (iPhone) or Chrome (Android).
+2. **iPhone:** tap **Share** (the square with the arrow) → **Add to Home Screen**
+   → **Add**.
+   **Android:** tap **Install app** on the page, or **⋮** → **Install app**
+   (older Chrome: **Add to Home screen**).
+3. **Wait 2 seconds** after it opens, then close it and reopen it from the new
+   icon. The first open installs the offline files; from then on it works with no
+   signal.
+4. **Check it worked:**
+   - The icon is the blue tag logo, labelled **Clear Price** (not a generic globe
+     or a screenshot of the page).
+   - It opens with **no browser address bar**.
+   - Opening it shows the blue brand screen briefly, not a white flash.
+   - Airplane mode on → type `89`, `20`, `70` → you still get **$21.36**, with
+     "Offline — the same maths, done on your phone."
+
+### What is different about a link that has not been deployed
+
+| | Sandbox/preview link | Your own deployed URL |
+| - | - | - |
+| Looks and installs correctly | ✅ | ✅ |
+| Works offline after the first open | ✅ | ✅ |
+| Still works in a month | ❌ the sandbox is rebuilt | ✅ |
+| Your own domain, and it shows in Google | ❌ | ✅ |
+
+So: install from the preview link to feel it today, then follow
+[DEPLOY.md](DEPLOY.md) (about 20 minutes, free) and install again from your own
+URL — the second install is the one to keep.
+
+---
+
 ## Steps for each device
 
 ### iPhone / iPad (Safari)
@@ -127,6 +165,13 @@ repackaged website — the widget and any offline extras would be what justify i
 Do this only if the web version has real usage.
 
 ---
+
+## Once it is deployed: install instructions for anyone
+
+Send these two lines with your link and nobody has to ask you what to do:
+
+> **iPhone:** open the link in Safari → tap Share → Add to Home Screen.
+> **Android:** open the link in Chrome → tap "Install app".
 
 ## Troubleshooting
 
