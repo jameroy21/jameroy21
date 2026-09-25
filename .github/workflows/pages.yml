@@ -35,6 +35,11 @@ jobs:
   build:
     name: Build the installable site
     runs-on: ubuntu-latest
+    # This repository is the development mirror; the public install address is
+    # served from jameroy21/clear-price. Without this guard the workflow would
+    # also fire when this branch lands on main here, and try to publish a site
+    # for a repository that has Pages switched off.
+    if: github.repository == 'jameroy21/clear-price'
     steps:
       - uses: actions/checkout@v4
 
@@ -90,6 +95,7 @@ jobs:
 
   deploy:
     name: Publish
+    if: github.repository == 'jameroy21/clear-price'
     needs: build
     runs-on: ubuntu-latest
     environment:

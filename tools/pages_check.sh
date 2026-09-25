@@ -37,8 +37,22 @@ cp -r dist/. "$STAGE/$SUBPATH/"
 echo "==> starting a plain static server on port $PORT"
 ( cd "$STAGE" && python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 ) &
 SERVER_PID=$!
-sleep 1
+
+# Wait for the server to actually answer. A fixed sleep is a flake on a loaded
+# CI runner: the test would then fail on a refused connection, not on the build.
+URL="http://127.0.0.1:$PORT/$SUBPATH/"
+for _ in $(seq 1 50); do
+  if curl -fsS -o /dev/null "$URL"; then
+    break
+  fi
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "the static server died on startup — is port $PORT already in use?" >&2
+    exit 1
+  fi
+  sleep 0.2
+done
+curl -fsS -o /dev/null "$URL" || { echo "the static server never answered on $URL" >&2; exit 1; }
 
 echo "==> checking the served site"
 cd "$ROOT/frontend"
-node tests/pages.smoke.mjs "http://127.0.0.1:$PORT/$SUBPATH/"
+node tests/pages.smoke.mjs "$URL"
